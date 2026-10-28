@@ -1,0 +1,34 @@
+test_duplicate_and_validation (test_database.DatabaseTests.test_duplicate_and_validation) ... ok
+test_match_idempotency_and_peak_score (test_database.DatabaseTests.test_match_idempotency_and_peak_score) ... ok
+test_password_salted_and_valid_login (test_database.DatabaseTests.test_password_salted_and_valid_login) ... ok
+test_profile_persistence (test_database.DatabaseTests.test_profile_persistence) ... ok
+test_authoritative_movement_speed (test_engine.EngineTests.test_authoritative_movement_speed) ... ok
+test_boost_floor (test_engine.EngineTests.test_boost_floor) ... ok
+test_boost_spends_score_drops_food_and_moves_faster (test_engine.EngineTests.test_boost_spends_score_drops_food_and_moves_faster) ... ok
+test_eating_grows_and_removes_food (test_engine.EngineTests.test_eating_grows_and_removes_food) ... ok
+test_enemy_body_collision (test_engine.EngineTests.test_enemy_body_collision) ... ok
+test_food_bound (test_engine.EngineTests.test_food_bound) ... ok
+test_grid_across_cell_border (test_engine.EngineTests.test_grid_across_cell_border) ... ok
+test_head_to_head_is_simultaneous (test_engine.EngineTests.test_head_to_head_is_simultaneous) ... ok
+test_respawn_resets_run_and_score (test_engine.EngineTests.test_respawn_resets_run_and_score) ... ok
+test_self_collision_disabled (test_engine.EngineTests.test_self_collision_disabled) ... ok
+test_spawn_shield (test_engine.EngineTests.test_spawn_shield) ... ok
+test_turn_wrap_and_limit (test_engine.EngineTests.test_turn_wrap_and_limit) ... ok
+test_wall_death_and_single_event (test_engine.EngineTests.test_wall_death_and_single_event) ... ok
+test_bad_frame_disconnect_does_not_stop_server (test_network.NetworkTests.test_bad_frame_disconnect_does_not_stop_server) ... ok
+test_death_respawn_history_and_cleanup (test_network.NetworkTests.test_death_respawn_history_and_cleanup) ... ok
+test_fragmented_auth_and_unauthenticated_access (test_network.NetworkTests.test_fragmented_auth_and_unauthenticated_access) ... ok
+test_resume_after_disconnect (test_network.NetworkTests.test_resume_after_disconnect) ... ok
+test_room_capacity_host_transfer_and_kick (test_network.NetworkTests.test_room_capacity_host_transfer_and_kick) ... ok
+test_room_chat_host_start_and_shared_state (test_network.NetworkTests.test_room_chat_host_start_and_shared_state) ... ok
+test_server_ignores_forged_position_score_and_player_id (test_network.NetworkTests.test_server_ignores_forged_position_score_and_player_id) ... ok
+test_encoder_disallows_nan (test_protocol.ProtocolTests.test_encoder_disallows_nan) ... ok
+test_fragmented_unicode_and_coalesced_frames (test_protocol.ProtocolTests.test_fragmented_unicode_and_coalesced_frames) ... ok
+test_frame_limit (test_protocol.ProtocolTests.test_frame_limit) ... ok
+test_numbers (test_protocol.ProtocolTests.test_numbers) ... ok
+test_reject_invalid_json_shape_and_nonfinite (test_protocol.ProtocolTests.test_reject_invalid_json_shape_and_nonfinite) ... ok
+
+----------------------------------------------------------------------
+Ran 29 tests in 4.450s
+
+OK

@@ -1,0 +1,25 @@
+{
+  "platform": "Linux-6.18.44-x86_64-with-glibc2.39",
+  "python": "3.12.14",
+  "clients": 8,
+  "bots": 4,
+  "transport": "TCP localhost",
+  "database": "SQLite",
+  "duration_seconds": 10.05,
+  "configured_physics_hz": 30,
+  "configured_snapshot_hz": 15,
+  "tick_ms_median": 3.672,
+  "tick_ms_p95": 5.469,
+  "snapshot_bytes_mean": 20550,
+  "received_snapshots": [
+    152,
+    152,
+    151,
+    152,
+    152,
+    152,
+    151,
+    152
+  ],
+  "worker_errors": []
+}

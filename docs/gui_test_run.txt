@@ -1,0 +1,2 @@
+GUI PASS: register, profile, room, chat, live game, death, respawn, history, reconnect.
+Screenshots: /workspace/scratch/17f384c62f15/Slither_Network_Game/docs/screenshots
