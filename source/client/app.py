@@ -1,6 +1,33 @@
+# ==============================================================================
+# Neon Slither - Client UI & Trải nghiệm người dùng
+# Phụ trách: Trần Minh Hải (Thành viên 2)
+# Chức năng: Điều phối màn hình (Auth, Lobby, Room, Game, HUD, Chat, Leaderboard)
+# ==============================================================================
+# ------------------------------------------------------------------------------
+# [Nhiệm vụ T2.3 & T2.4 - Phụ trách: Trần Minh Hải]
+# - T2.3: Giao diện Sảnh (Lobby): Tìm kiếm phòng, danh sách phòng có cuộn,
+#         tạo phòng (2-8 người, 0-4 bot), chuyển quyền chủ phòng (Host transfer).
+# - T2.4: Màn hình Hồ sơ & Skin: Chọn 6 loại skin màu Neon, xem điểm kỷ lục cá nhân
+#         và cập nhật cấu hình người chơi trước khi vào trận.
+# ------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+# [Nhiệm vụ T2.5 - Phụ trách: Trần Minh Hải]
+# - Thiết kế giao diện hiển thị trong trận (In-game HUD): Điểm số, độ dài rắn,
+#   thời gian sống sót, trạng thái bứt tốc (boost indicator).
+# - Hộp thoại Chat trong trận: Bật/tắt bằng phím Enter, hiển thị tin nhắn mờ dần.
+# - Bảng xếp hạng Top 10 người chơi theo thời gian thực ở góc trên bên phải.
+# - Minimap góc dưới: Định vị vị trí bản thân, ranh giới map 3000x3000 và các đối thủ.
+# ------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+# [Nhiệm vụ T2.6 - Phụ trách: Trần Minh Hải]
+# - Màn hình kết thúc trận (Death / Game Over Screen): Hiển thị lý do chết
+#   (va tường, va thân đối thủ, va đầu), điểm đỉnh, điểm cuối và thời gian sống.
+# - Luồng Hồi sinh nhanh: Phím [R] để hồi sinh tiếp tục trong phòng, [Esc] về sảnh.
+# - Màn hình Lịch sử đấu (Match History): Xem 20 lượt chơi gần nhất từ CSDL.
+# - Hướng dẫn & Điều khiển: Bật/tắt hộp thoại hướng dẫn luật chơi [F1],
+#   chế độ toàn màn hình [F11] và điều hướng form bằng phím [Tab].
+# ------------------------------------------------------------------------------
 """Desktop scenes: authentication, lobby, room, arena and result overlays."""
-from pathlib import Path
-import json
 import math
 import time
 import pygame
@@ -8,7 +35,7 @@ from common.config import SKINS, INPUT_RATE, BASE_SEGMENTS
 from client.network import Network
 from client.graphics import Backdrop, WorldRenderer, snake_art, halo, rgb
 from client.widgets import (Buttons, Input, text, panel, pill, font,
-                            BG, PANEL, EDGE, TEXT, MUTED, ACCENT, RED, ROOT)
+                            BG, EDGE, TEXT, MUTED, ACCENT, RED)
 
 
 class App:
@@ -335,247 +362,3 @@ class App:
         self.active_fields=["room","profile"]
         text(self.canvas,"Người tối đa",(455,579),13,MUTED)
         self.buttons.draw(self.canvas,"−",(455,604,33,45),lambda:setattr(self,"capacity",max(2,self.capacity-1)))
-        text(self.canvas,str(self.capacity),(514,626),18,TEXT,True,"center")
-        self.buttons.draw(self.canvas,"+",(540,604,33,45),lambda:setattr(self,"capacity",min(8,self.capacity+1)))
-        text(self.canvas,"Bot luyện tập",(605,579),13,MUTED)
-        self.buttons.draw(self.canvas,"−",(605,604,33,45),lambda:setattr(self,"bots",max(0,self.bots-1)))
-        text(self.canvas,str(self.bots),(664,626),18,TEXT,True,"center")
-        self.buttons.draw(self.canvas,"+",(690,604,33,45),lambda:setattr(self,"bots",min(4,self.bots+1)))
-        text(self.canvas,"Bot do server điều khiển và không tính vào BXH tổng.",(66,691),12,MUTED)
-        self.buttons.draw(self.canvas,"Tạo phòng  +",(604,675,171,46),self.create_room,True)
-        panel(self.canvas,(822,210,416,537))
-        text(self.canvas,"HỒ SƠ CỦA BẠN",(848,234),13,MUTED,True)
-        text(self.canvas,f"{self.user['highest_score']:,}",(848,269),40,ACCENT,True)
-        text(self.canvas,"ĐIỂM KỶ LỤC",(850,323),11,MUTED)
-        pts=[(1124-i*5,307+23*math.sin(i*.13+now)) for i in range(42)]
-        snake_art(self.canvas,pts,self.skin,0,12)
-        self.fields["profile"].draw(self.canvas,(848,388,365,43))
-        text(self.canvas,"Màu rắn",(848,454),13,MUTED)
-        for i,color in enumerate(SKINS):
-            rect=pygame.Rect(847+i*60,485,44,40)
-            if color==self.skin:
-                pygame.draw.rect(self.canvas,TEXT,rect.inflate(6,6),2,border_radius=14)
-            pygame.draw.rect(self.canvas,rgb(color),rect,border_radius=11)
-            self.buttons.items.append((rect,lambda c=color:setattr(self,"skin",c),True))
-        self.buttons.draw(self.canvas,"Lưu hồ sơ",(848,549,365,44),lambda:self.send("PROFILE",name=self.fields["profile"].value,skin=self.skin))
-        self.buttons.draw(self.canvas,"Bảng xếp hạng",(848,611,177,44),lambda:self.open_modal("rankings"))
-        self.buttons.draw(self.canvas,"Lịch sử",(1036,611,177,44),lambda:self.open_modal("history"))
-        self.buttons.draw(self.canvas,"Đăng xuất",(848,673,177,42),lambda:self.send("LOGOUT"))
-        self.buttons.draw(self.canvas,"Cách chơi",(1036,673,177,42),lambda:self.open_modal("help"))
-        text(self.canvas,"Cuộn chuột trên sảnh để xem thêm phòng.",(43,765),11,MUTED)
-
-    def draw_chat_lines(self,rect,lines=9):
-        x,y,w,h=rect
-        wrapped=[]
-        for entry in self.chat:
-            prefix=entry["name"]+": "
-            words=(prefix+entry["text"]).split()
-            line=""
-            for word in words:
-                if font(13).size(line+" "+word)[0] > w-10 and line:
-                    wrapped.append(line); line=word
-                else:
-                    line=(line+" "+word).strip()
-            wrapped.append(line)
-        for i,line in enumerate(wrapped[-lines:]):
-            text(self.canvas,line,(x,y+i*25),13,TEXT,max_width=w)
-
-    def draw_room(self,now):
-        self.header("PHÒNG CHỜ  /  TRÒ CHUYỆN VÀ CHUẨN BỊ")
-        text(self.canvas,self.room["name"],(42,129),29,TEXT,True,max_width=860)
-        text(self.canvas,f"Mã phòng {self.room['id']} · {self.room['players']}/{self.room['capacity']} người · {self.room['bots']} bot",(43,174),14,MUTED)
-        self.buttons.draw(self.canvas,"Rời phòng",(1074,135,164,45),lambda:self.send("LEAVE_ROOM"))
-        panel(self.canvas,(42,218,658,455))
-        text(self.canvas,"NGƯỜI CHƠI",(69,243),13,MUTED,True)
-        for i,member in enumerate(self.room["members"]):
-            x=66+(i%2)*315; y=284+(i//2)*88
-            panel(self.canvas,(x,y,294,73),(21,36,48),12,None)
-            snake_art(self.canvas,[(x+33-j*3,y+35) for j in range(5)],member["color"],0,11)
-            text(self.canvas,member["name"],(x+60,y+18),15,TEXT,True,max_width=185)
-            text(self.canvas,"CHỦ PHÒNG" if member["id"]==self.room["host"] else "SẴN SÀNG",(x+60,y+44),10,ACCENT)
-            if self.room["host"]==self.pid and member["id"]!=self.pid:
-                self.buttons.draw(self.canvas,"×",(x+252,y+21,28,30),lambda pid=member["id"]:self.send("KICK",player_id=pid))
-        panel(self.canvas,(722,218,516,455))
-        text(self.canvas,"TRÒ CHUYỆN TRONG PHÒNG",(748,243),13,MUTED,True)
-        if not self.chat:
-            text(self.canvas,"Chào đồng đội trước khi bắt đầu nhé.",(748,294),14,MUTED)
-        self.draw_chat_lines((748,288,460,292),11)
-        self.fields["chat"].draw(self.canvas,(748,608,349,42))
-        self.buttons.draw(self.canvas,"Gửi",(1108,608,105,42),self.send_chat,True)
-        self.active_fields=["chat"]
-        text(self.canvas,"Chuột: điều hướng   /   Space: bứt tốc   /   Enter: chat",(44,711),14,MUTED)
-        host=self.room["host"]==self.pid
-        self.buttons.draw(self.canvas,"BẮT ĐẦU TRẬN  →" if host else "Chờ chủ phòng bắt đầu…",(880,698,358,53),lambda:self.send("START_GAME"),True,enabled=host)
-        text(self.canvas,"Có thể chơi một mình cùng bot hoặc mời thêm người qua mạng LAN.",(44,755),12,MUTED)
-
-    def draw_game(self,now,dt):
-        world=self.world.draw(self.canvas,now,dt,self.pid)
-        panel(self.canvas,(24,23,302,100),(12,26,37),18)
-        text(self.canvas,"NEON SLITHER",(44,38),15,ACCENT,True)
-        me=next((s for s in world["snakes"] if s["id"]==self.pid),None) if world else None
-        text(self.canvas,str(me["score"] if me else 0),(44,66),32,TEXT,True)
-        text(self.canvas,"ĐIỂM",(121,80),11,MUTED,True)
-        text(self.canvas,f"{len(me['body']) if me else BASE_SEGMENTS} đốt  ·  {self.rtt} ms",(181,89),11,MUTED)
-        if world:
-            panel(self.canvas,(1016,23,240,90+min(10,len(world["top"]))*31),(12,26,37),18)
-            text(self.canvas,"BẢNG XẾP HẠNG",(1036,42),13,MUTED,True)
-            text(self.canvas,self.room["name"],(1036,66),11,MUTED,max_width=193)
-            for i,row in enumerate(world["top"]):
-                y=107+i*31
-                color=ACCENT if row["id"]==self.pid else TEXT
-                text(self.canvas,f"{i+1:02}",(1036,y),12,MUTED)
-                text(self.canvas,row["name"],(1064,y),13,color,True,max_width=118)
-                text(self.canvas,str(row["score"]),(1236,y),13,color,True,"topright")
-            self.world.radar(self.canvas,world,self.pid,(1056,569,200,205))
-        self.buttons.draw(self.canvas,"Rời trận  Esc",(26,143,154,36),lambda:self.send("LEAVE_ROOM"))
-        panel(self.canvas,(411,722,458,53),(12,26,37),18)
-        if me and me["boost"]:
-            text(self.canvas,"BỨT TỐC  ·  ĐANG TIÊU HAO ĐIỂM",(640,748),13,ACCENT,True,"center")
-        elif me and me["score"]<5:
-            text(self.canvas,"Ăn đủ 5 điểm để mở bứt tốc",(640,748),14,MUTED,anchor="center")
-        else:
-            text(self.canvas,"Giữ SPACE hoặc CHUỘT TRÁI để bứt tốc",(640,748),13,TEXT,anchor="center")
-        text(self.canvas,"CHUỘT  lái rắn     ENTER  chat     F1  hướng dẫn",(26,780),10,MUTED,anchor="bottomleft")
-        if self.chat_open:
-            panel(self.canvas,(24,482,426,262),(12,26,37),17)
-            self.draw_chat_lines((43,501,384,153),6)
-            self.fields["chat"].draw(self.canvas,(43,690,330,38))
-            self.buttons.draw(self.canvas,"Gửi",(380,690,53,38),self.send_chat,True)
-            self.active_fields=["chat"]
-        else:
-            for i,entry in enumerate(self.chat[-3:]):
-                text(self.canvas,entry["name"]+": "+entry["text"],(27,663+i*23),12,MUTED,max_width=365)
-        if self.dead:
-            self.draw_death()
-
-    def dim(self):
-        overlay=pygame.Surface((1280,800),pygame.SRCALPHA)
-        overlay.fill((3,9,16,205)); self.canvas.blit(overlay,(0,0))
-
-    def draw_death(self):
-        self.dim()
-        self.buttons.items=[]
-        self.active_fields=[]
-        panel(self.canvas,(364,205,552,374),(16,28,40),25)
-        pill(self.canvas,"LƯỢT CHƠI KẾT THÚC",(523,232),RED)
-        text(self.canvas,"Một vòng chơi. Thêm kinh nghiệm.",(640,291),22,TEXT,True,"center")
-        reason={"wall":"Bạn đã chạm biên đấu trường.","body":"Đầu rắn đã va vào thân đối thủ.","head":"Hai đầu rắn đã va chạm."}.get(self.dead["reason"],"Lượt chơi đã kết thúc.")
-        text(self.canvas,reason,(640,328),14,MUTED,anchor="center")
-        for i,(value,label) in enumerate([(self.dead["score"],"ĐIỂM CAO NHẤT"),(self.dead["max_length"],"ĐỘ DÀI TỐI ĐA"),(f"{int(self.dead['duration'])}s","THỜI GIAN")]):
-            x=463+i*176
-            text(self.canvas,value,(x,390),34,ACCENT,True,"center")
-            text(self.canvas,label,(x,431),10,MUTED,True,"center")
-        self.buttons.draw(self.canvas,"HỒI SINH  R",(398,491,237,51),lambda:self.send("RESPAWN"),True)
-        self.buttons.draw(self.canvas,"Về sảnh",(649,491,233,51),lambda:self.send("LEAVE_ROOM"))
-
-    def draw_modal(self):
-        self.dim()
-        self.buttons.items=[]
-        self.active_fields=[]
-        panel(self.canvas,(205,109,870,583),(16,28,40),24)
-        title={"help":"Cách chơi", "rankings":"Bảng xếp hạng toàn máy chủ", "history":"Lịch sử 20 lượt gần nhất"}[self.modal]
-        text(self.canvas,title,(239,141),25,TEXT,True)
-        self.buttons.draw(self.canvas,"Đóng",(943,136,100,40),lambda:setattr(self,"modal",None))
-        if self.modal=="help":
-            rows=[("CHUỘT / WASD / MŨI TÊN","Dẫn đầu rắn về hướng mong muốn."),
-                  ("SPACE / GIỮ CHUỘT TRÁI","Tăng tốc khi có ít nhất 5 điểm; mất 1 điểm mỗi 0,18 giây."),
-                  ("ĂN HẠT PHÁT SÁNG","Tăng điểm và chiều dài. Hạt từ xác rắn có giá trị cao hơn."),
-                  ("TRÁNH TƯỜNG VÀ THÂN ĐỐI THỦ","Không tự cắn đuôi. Va chạm đầu đối đầu có thể làm cả hai chết."),
-                  ("ENTER / R / ESC","Chat trong trận / hồi sinh sau khi chết / rời phòng."),
-                  ("F11 / F1","Toàn màn hình / mở hướng dẫn. Rắn mới có khiên 2 giây.")]
-            for i,(heading,body) in enumerate(rows):
-                y=214+i*67
-                text(self.canvas,f"0{i+1}",(240,y),17,ACCENT,True)
-                text(self.canvas,heading,(280,y),13,TEXT,True)
-                text(self.canvas,body,(280,y+26),12,MUTED,max_width=740)
-            text(self.canvas,"Muốn chơi LAN: chạy server với --host 0.0.0.0, nhập IP máy chủ tại màn hình đăng nhập.",(242,644),12,ACCENT)
-        elif self.modal=="rankings":
-            text(self.canvas,"Kỷ lục là điểm cao nhất đạt được trong một lượt. Bot không được lưu.",(240,192),13,MUTED)
-            items=self.rankings
-            offset=min(self.scroll,max(0,len(items)-9))
-            for i,row in enumerate(items[offset:offset+9]):
-                y=236+i*44
-                panel(self.canvas,(239,y,804,37),(21,36,48) if i%2==0 else (16,28,40),7,None)
-                text(self.canvas,f"{offset+i+1:02}",(256,y+10),13,MUTED,True)
-                pygame.draw.circle(self.canvas,rgb(row["skin_color"]),(309,y+18),6)
-                text(self.canvas,row["display_name"],(331,y+9),15,TEXT,True,max_width=500)
-                text(self.canvas,row["highest_score"],(1024,y+9),15,ACCENT,True,"topright")
-            text(self.canvas,"Cuộn chuột để xem tối đa 50 người chơi.",(240,651),12,MUTED)
-        else:
-            items=self.history
-            for x,label in [(248,"Điểm cao nhất"),(389,"Đốt tối đa"),(510,"Thời gian"),(631,"Kết thúc"),(790,"Ngày chơi")]:
-                text(self.canvas,label,(x,209),13,MUTED)
-            if not items:
-                text(self.canvas,"Chưa có lịch sử. Hoàn thành một lượt để ghi nhận kết quả.",(640,400),16,MUTED,anchor="center")
-            offset=min(self.scroll,max(0,len(items)-9))
-            for i,row in enumerate(items[offset:offset+9]):
-                y=252+i*41
-                text(self.canvas,str(row["score"]),(248,y),15,ACCENT,True)
-                text(self.canvas,str(row["max_length"]),(389,y),14)
-                text(self.canvas,f"{row['duration_seconds']:.1f}s",(510,y),14)
-                text(self.canvas,row["death_reason"],(631,y),13,MUTED)
-                text(self.canvas,row["played_at"][:19],(790,y),12,MUTED)
-            text(self.canvas,"Điểm được ghi khi chết, rời trận hoặc mất kết nối; dữ liệu có thể trễ một nhịp lưu.",(240,651),11,MUTED)
-
-    def update(self,now,dt):
-        if self.net:
-            for message in self.net.poll(): self.handle_message(message)
-        if self.scene=="lobby" and now-self.last_refresh>3:
-            self.send("LIST_ROOMS"); self.last_refresh=now
-        if self.scene=="game" and not self.dead and not self.modal and now-self.last_input>=1/INPUT_RATE:
-            keys=pygame.key.get_pressed()
-            mx,my=self.mouse; x,y=self.world.me_screen
-            angle=math.atan2(my-y,mx-x)
-            dx=(keys[pygame.K_d] or keys[pygame.K_RIGHT])-(keys[pygame.K_a] or keys[pygame.K_LEFT])
-            dy=(keys[pygame.K_s] or keys[pygame.K_DOWN])-(keys[pygame.K_w] or keys[pygame.K_UP])
-            if not self.chat_open and (dx or dy): angle=math.atan2(dy,dx)
-            hovering=any(r.collidepoint(self.mouse) for r,_,enabled in self.buttons.items if enabled)
-            boost=not self.chat_open and (keys[pygame.K_SPACE] or (pygame.mouse.get_pressed()[0] and not hovering))
-            if self.connected:
-                self.seq+=1
-                self.send("PLAYER_INPUT",angle=angle,boost=bool(boost),seq=self.seq)
-            self.last_input=now
-
-    def draw(self,now,dt):
-        self.buttons.begin(self.mouse)
-        self.active_fields=[]
-        if self.scene!="game": self.backdrop.draw(self.canvas,now)
-        if self.scene=="auth": self.draw_auth(now)
-        elif self.scene=="lobby" and self.user: self.draw_lobby(now)
-        elif self.scene=="room" and self.room: self.draw_room(now)
-        elif self.scene=="game" and self.room: self.draw_game(now,dt)
-        if self.modal: self.draw_modal()
-        if not self.connected and self.scene!="auth":
-            self.dim()
-            self.buttons.items=[]
-            text(self.canvas,self.connection_note,(640,385),25,RED,True,"center")
-            text(self.canvas,"Đang khôi phục kết nối với máy chủ…",(640,426),15,MUTED,anchor="center")
-        if now<self.toast_until:
-            width=min(1200,font(14).size(self.toast_value)[0]+40)
-            panel(self.canvas,((1280-width)//2,14,width,42),(42,24,34) if self.toast_error else (21,51,44),12,RED if self.toast_error else ACCENT)
-            text(self.canvas,self.toast_value,(640,35),14,RED if self.toast_error else ACCENT,anchor="center",max_width=width-25)
-
-    def frame(self):
-        dt=min(.08,self.clock.tick(60)/1000)
-        now=time.monotonic()
-        ww,wh=self.window.get_size()
-        scale=min(ww/1280,wh/800)
-        dx,dy=(ww-1280*scale)/2,(wh-800*scale)/2
-        pos=pygame.mouse.get_pos()
-        self.mouse=((pos[0]-dx)/scale,(pos[1]-dy)/scale)
-        for e in pygame.event.get(): self.event(e)
-        self.update(now,dt)
-        self.draw(now,dt)
-        self.window.fill(BG)
-        if ww==1280 and wh==800:
-            self.window.blit(self.canvas,(0,0))
-        else:
-            self.window.blit(pygame.transform.smoothscale(self.canvas,(round(1280*scale),round(800*scale))),(round(dx),round(dy)))
-        pygame.display.flip()
-
-    def run(self):
-        try:
-            while self.running: self.frame()
-        finally:
-            if self.net: self.net.close()
-            pygame.quit()
