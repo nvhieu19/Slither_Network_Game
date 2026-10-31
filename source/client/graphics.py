@@ -37,3 +37,7 @@ def snake_art(surface, points, color, angle, radius=RADIUS, boosting=False, shie
         if -70<p[0]<surface.get_width()+70 and -70<p[1]<surface.get_height()+70:
             r=max(4,round(radius*min(1,.45+(len(points)-i)/8)))
             pygame.draw.circle(surface,(2,7,13),(round(p[0]+2),round(p[1]+4)),r+2)
+    for i in range(len(points)-1, -1, -1):
+        p = (round(points[i][0]),round(points[i][1]))
+        if not (-70 < p[0] < surface.get_width()+70 and -70 < p[1] < surface.get_height()+70):
+            continue

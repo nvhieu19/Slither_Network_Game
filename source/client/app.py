@@ -362,3 +362,125 @@ class App:
         self.active_fields=["room","profile"]
         text(self.canvas,"Người tối đa",(455,579),13,MUTED)
         self.buttons.draw(self.canvas,"−",(455,604,33,45),lambda:setattr(self,"capacity",max(2,self.capacity-1)))
+        text(self.canvas,str(self.capacity),(514,626),18,TEXT,True,"center")
+        self.buttons.draw(self.canvas,"+",(540,604,33,45),lambda:setattr(self,"capacity",min(8,self.capacity+1)))
+        text(self.canvas,"Bot luyện tập",(605,579),13,MUTED)
+        self.buttons.draw(self.canvas,"−",(605,604,33,45),lambda:setattr(self,"bots",max(0,self.bots-1)))
+        text(self.canvas,str(self.bots),(664,626),18,TEXT,True,"center")
+        self.buttons.draw(self.canvas,"+",(690,604,33,45),lambda:setattr(self,"bots",min(4,self.bots+1)))
+        text(self.canvas,"Bot do server điều khiển và không tính vào BXH tổng.",(66,691),12,MUTED)
+        self.buttons.draw(self.canvas,"Tạo phòng  +",(604,675,171,46),self.create_room,True)
+        panel(self.canvas,(822,210,416,537))
+        text(self.canvas,"HỒ SƠ CỦA BẠN",(848,234),13,MUTED,True)
+        text(self.canvas,f"{self.user['highest_score']:,}",(848,269),40,ACCENT,True)
+        text(self.canvas,"ĐIỂM KỶ LỤC",(850,323),11,MUTED)
+        pts=[(1124-i*5,307+23*math.sin(i*.13+now)) for i in range(42)]
+        snake_art(self.canvas,pts,self.skin,0,12)
+        self.fields["profile"].draw(self.canvas,(848,388,365,43))
+        text(self.canvas,"Màu rắn",(848,454),13,MUTED)
+        for i,color in enumerate(SKINS):
+            rect=pygame.Rect(847+i*60,485,44,40)
+            if color==self.skin:
+                pygame.draw.rect(self.canvas,TEXT,rect.inflate(6,6),2,border_radius=14)
+            pygame.draw.rect(self.canvas,rgb(color),rect,border_radius=11)
+            self.buttons.items.append((rect,lambda c=color:setattr(self,"skin",c),True))
+        self.buttons.draw(self.canvas,"Lưu hồ sơ",(848,549,365,44),lambda:self.send("PROFILE",name=self.fields["profile"].value,skin=self.skin))
+        self.buttons.draw(self.canvas,"Bảng xếp hạng",(848,611,177,44),lambda:self.open_modal("rankings"))
+        self.buttons.draw(self.canvas,"Lịch sử",(1036,611,177,44),lambda:self.open_modal("history"))
+        self.buttons.draw(self.canvas,"Đăng xuất",(848,673,177,42),lambda:self.send("LOGOUT"))
+        self.buttons.draw(self.canvas,"Cách chơi",(1036,673,177,42),lambda:self.open_modal("help"))
+        text(self.canvas,"Cuộn chuột trên sảnh để xem thêm phòng.",(43,765),11,MUTED)
+
+    def draw_chat_lines(self,rect,lines=9):
+        x,y,w,_=rect
+        wrapped=[]
+        for entry in self.chat:
+            prefix=entry["name"]+": "
+            words=(prefix+entry["text"]).split()
+            line=""
+            for word in words:
+                if font(13).size(line+" "+word)[0] > w-10 and line:
+                    wrapped.append(line); line=word
+                else:
+                    line=(line+" "+word).strip()
+            wrapped.append(line)
+        for i,line in enumerate(wrapped[-lines:]):
+            text(self.canvas,line,(x,y+i*25),13,TEXT,max_width=w)
+
+    def draw_room(self):
+        self.header("PHÒNG CHỜ  /  TRÒ CHUYỆN VÀ CHUẨN BỊ")
+        text(self.canvas,self.room["name"],(42,129),29,TEXT,True,max_width=860)
+        text(self.canvas,f"Mã phòng {self.room['id']} · {self.room['players']}/{self.room['capacity']} người · {self.room['bots']} bot",(43,174),14,MUTED)
+        self.buttons.draw(self.canvas,"Rời phòng",(1074,135,164,45),lambda:self.send("LEAVE_ROOM"))
+        panel(self.canvas,(42,218,658,455))
+        text(self.canvas,"NGƯỜI CHƠI",(69,243),13,MUTED,True)
+        for i,member in enumerate(self.room["members"]):
+            x=66+(i%2)*315; y=284+(i//2)*88
+            panel(self.canvas,(x,y,294,73),(21,36,48),12,None)
+            snake_art(self.canvas,[(x+33-j*3,y+35) for j in range(5)],member["color"],0,11)
+            text(self.canvas,member["name"],(x+60,y+18),15,TEXT,True,max_width=185)
+            text(self.canvas,"CHỦ PHÒNG" if member["id"]==self.room["host"] else "SẴN SÀNG",(x+60,y+44),10,ACCENT)
+            if self.room["host"]==self.pid and member["id"]!=self.pid:
+                self.buttons.draw(self.canvas,"×",(x+252,y+21,28,30),lambda pid=member["id"]:self.send("KICK",player_id=pid))
+        panel(self.canvas,(722,218,516,455))
+        text(self.canvas,"TRÒ CHUYỆN TRONG PHÒNG",(748,243),13,MUTED,True)
+        if not self.chat:
+            text(self.canvas,"Chào đồng đội trước khi bắt đầu nhé.",(748,294),14,MUTED)
+        self.draw_chat_lines((748,288,460,292),11)
+        self.fields["chat"].draw(self.canvas,(748,608,349,42))
+        self.buttons.draw(self.canvas,"Gửi",(1108,608,105,42),self.send_chat,True)
+        self.active_fields=["chat"]
+        text(self.canvas,"Chuột: điều hướng   /   Space: bứt tốc   /   Enter: chat",(44,711),14,MUTED)
+        host=self.room["host"]==self.pid
+        self.buttons.draw(self.canvas,"BẮT ĐẦU TRẬN  →" if host else "Chờ chủ phòng bắt đầu…",(880,698,358,53),lambda:self.send("START_GAME"),True,enabled=host)
+        text(self.canvas,"Có thể chơi một mình cùng bot hoặc mời thêm người qua mạng LAN.",(44,755),12,MUTED)
+
+    def draw_game(self,now,dt):
+        world=self.world.draw(self.canvas,now,dt,self.pid)
+        panel(self.canvas,(24,23,302,100),(12,26,37),18)
+        text(self.canvas,"NEON SLITHER",(44,38),15,ACCENT,True)
+        me=next((s for s in world["snakes"] if s["id"]==self.pid),None) if world else None
+        text(self.canvas,str(me["score"] if me else 0),(44,66),32,TEXT,True)
+        text(self.canvas,"ĐIỂM",(121,80),11,MUTED,True)
+        text(self.canvas,f"{len(me['body']) if me else BASE_SEGMENTS} đốt  ·  {self.rtt} ms",(181,89),11,MUTED)
+        if world:
+            panel(self.canvas,(1016,23,240,90+min(10,len(world["top"]))*31),(12,26,37),18)
+            text(self.canvas,"BẢNG XẾP HẠNG",(1036,42),13,MUTED,True)
+            text(self.canvas,self.room["name"],(1036,66),11,MUTED,max_width=193)
+            for i,row in enumerate(world["top"]):
+                y=107+i*31
+                color=ACCENT if row["id"]==self.pid else TEXT
+                text(self.canvas,f"{i+1:02}",(1036,y),12,MUTED)
+                text(self.canvas,row["name"],(1064,y),13,color,True,max_width=118)
+                text(self.canvas,str(row["score"]),(1236,y),13,color,True,"topright")
+            self.world.radar(self.canvas,world,self.pid,(1056,569,200,205))
+        self.buttons.draw(self.canvas,"Rời trận  Esc",(26,143,154,36),lambda:self.send("LEAVE_ROOM"))
+        panel(self.canvas,(411,722,458,53),(12,26,37),18)
+        if me and me["boost"]:
+            text(self.canvas,"BỨT TỐC  ·  ĐANG TIÊU HAO ĐIỂM",(640,748),13,ACCENT,True,"center")
+        elif me and me["score"]<5:
+            text(self.canvas,"Ăn đủ 5 điểm để mở bứt tốc",(640,748),14,MUTED,anchor="center")
+        else:
+            text(self.canvas,"Giữ SPACE hoặc CHUỘT TRÁI để bứt tốc",(640,748),13,TEXT,anchor="center")
+        text(self.canvas,"CHUỘT  lái rắn     ENTER  chat     F1  hướng dẫn",(26,780),10,MUTED,anchor="bottomleft")
+        if self.chat_open:
+            panel(self.canvas,(24,482,426,262),(12,26,37),17)
+            self.draw_chat_lines((43,501,384,153),6)
+            self.fields["chat"].draw(self.canvas,(43,690,330,38))
+            self.buttons.draw(self.canvas,"Gửi",(380,690,53,38),self.send_chat,True)
+            self.active_fields=["chat"]
+        else:
+            for i,entry in enumerate(self.chat[-3:]):
+                text(self.canvas,entry["name"]+": "+entry["text"],(27,663+i*23),12,MUTED,max_width=365)
+        if self.dead:
+            self.draw_death()
+
+    def dim(self):
+        overlay=pygame.Surface((1280,800),pygame.SRCALPHA)
+        overlay.fill((3,9,16,205)); self.canvas.blit(overlay,(0,0))
+
+    def draw_death(self):
+        self.dim()
+        self.buttons.items=[]
+        self.active_fields=[]
+        panel(self.canvas,(364,205,552,374),(16,28,40),25)
