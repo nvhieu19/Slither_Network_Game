@@ -53,3 +53,11 @@ def snake_art(surface, points, color, angle, radius=RADIUS, boosting=False, shie
         pygame.draw.circle(surface, c, (int(head[0]),int(head[1])),radius+9,1)
     forward = (math.cos(angle),math.sin(angle))
     side = (-forward[1],forward[0])
+    for sign in (-1,1):
+        p = (head[0]+forward[0]*radius*.46+side[0]*radius*.47*sign,
+             head[1]+forward[1]*radius*.46+side[1]*radius*.47*sign)
+        pygame.draw.circle(surface,(244,255,253),(int(p[0]),int(p[1])),max(3,int(radius*.34)))
+        pygame.draw.circle(surface,(11,25,34),(int(p[0]+forward[0]*2),int(p[1]+forward[1]*2)),max(2,int(radius*.17)))
+
+
+class Backdrop:
