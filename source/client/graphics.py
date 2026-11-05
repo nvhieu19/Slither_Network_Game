@@ -61,3 +61,22 @@ def snake_art(surface, points, color, angle, radius=RADIUS, boosting=False, shie
 
 
 class Backdrop:
+    def __init__(self):
+        self.surface = pygame.Surface((1280,800))
+        for y in range(800):
+            t = y/800
+            pygame.draw.line(self.surface,(int(10+3*t),int(18+7*t),int(29+9*t)),(0,y),(1280,y))
+        for x in range(0,1280,48):
+            pygame.draw.line(self.surface,(20,32,44),(x,0),(x,800))
+        for y in range(0,800,48):
+            pygame.draw.line(self.surface,(20,32,44),(0,y),(1280,y))
+        rng = random.Random(33)
+        self.stars = [(rng.randrange(1280),rng.randrange(800),rng.random()*math.tau) for _ in range(60)]
+
+    def draw(self, surface, now):
+        surface.blit(self.surface,(0,0))
+        for x,y,phase in self.stars:
+            c = int(58+25*math.sin(now*.7+phase))
+            pygame.draw.circle(surface,(c//2,c,c+15),(x,y),1)
+
+
