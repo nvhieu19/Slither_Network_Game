@@ -80,3 +80,35 @@ class Backdrop:
             pygame.draw.circle(surface,(c//2,c,c+15),(x,y),1)
 
 
+class WorldRenderer:
+    def __init__(self):
+        self.states = deque(maxlen=8)
+        self.camera = None
+        self.particles = []
+        self.last_alive = {}
+        self.rng = random.Random(42)
+        self.me_screen = (640,400)
+
+    def push(self, state):
+        for s in state["snakes"]:
+            if not s["alive"] and self.last_alive.get(s["id"],False):
+                color = rgb(s["color"])
+                for p in s["body"][::2]:
+                    for _ in range(2):
+                        self.particles.append([p[0],p[1],self.rng.uniform(-100,100),self.rng.uniform(-100,100),.8,color])
+            self.last_alive[s["id"]] = s["alive"]
+        self.states.append((state.get("_received",time.monotonic()),state))
+
+    def interpolated(self, now):
+        if not self.states:
+            return None
+        target = now-.10
+        before = self.states[0]
+        after = self.states[-1]
+        for item in self.states:
+            if item[0] <= target:
+                before = item
+            if item[0] >= target:
+                after = item
+                break
+        a,b = before[1],after[1]
