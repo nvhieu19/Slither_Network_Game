@@ -1,3 +1,14 @@
+# ==============================================================================
+# Neon Slither - Kịch bản Kiểm thử Giao diện Tự động (GUI Smoke Test)
+# Phụ trách: Trần Minh Hải (Thành viên 2 - Phục vụ Demo & Bàn giao đồ án)
+#
+# Kiểm tra tự động toàn diện luồng trải nghiệm người dùng theo tiêu chí chấm điểm:
+# 1. Đăng ký & Đăng nhập: Kiểm tra form nhập liệu, phím Tab và báo lỗi đầu vào.
+# 2. Sảnh chờ (Lobby): Tạo phòng, danh sách cuộn, chọn 6 Skin màu Neon đặc trưng.
+# 3. Trận đấu: Hiển thị HUD điểm số, Chat overlay, Minimap và Top 10 Leaderboard.
+# 4. Kết thúc trận: Hiển thị nguyên nhân chết, Hồi sinh tức thì [R] và Lịch sử đấu.
+# 5. Phím chức năng: Hướng dẫn luật chơi [F1] và chuyển đổi toàn màn hình [F11].
+# ==============================================================================
 """Reproducible real-server GUI smoke test and screenshots in SDL dummy mode.
 
 Run: python -m tools.gui_smoke --out PATH
