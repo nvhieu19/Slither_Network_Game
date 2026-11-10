@@ -3,6 +3,13 @@
 # Phụ trách: Trần Minh Hải (Thành viên 2)
 # Chức năng: Điều phối màn hình (Auth, Lobby, Room, Game, HUD, Chat, Leaderboard)
 # ==============================================================================
+# ------------------------------------------------------------------------------
+# [Nhiệm vụ T2.3 & T2.4 - Phụ trách: Trần Minh Hải]
+# - T2.3: Giao diện Sảnh (Lobby): Tìm kiếm phòng, danh sách phòng có cuộn,
+#         tạo phòng (2-8 người, 0-4 bot), chuyển quyền chủ phòng (Host transfer).
+# - T2.4: Màn hình Hồ sơ & Skin: Chọn 6 loại skin màu Neon, xem điểm kỷ lục cá nhân
+#         và cập nhật cấu hình người chơi trước khi vào trận.
+# ------------------------------------------------------------------------------
 """Desktop scenes: authentication, lobby, room, arena and result overlays."""
 from pathlib import Path
 import json
