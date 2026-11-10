@@ -10,6 +10,14 @@
 # - T2.4: Màn hình Hồ sơ & Skin: Chọn 6 loại skin màu Neon, xem điểm kỷ lục cá nhân
 #         và cập nhật cấu hình người chơi trước khi vào trận.
 # ------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+# [Nhiệm vụ T2.5 - Phụ trách: Trần Minh Hải]
+# - Thiết kế giao diện hiển thị trong trận (In-game HUD): Điểm số, độ dài rắn,
+#   thời gian sống sót, trạng thái bứt tốc (boost indicator).
+# - Hộp thoại Chat trong trận: Bật/tắt bằng phím Enter, hiển thị tin nhắn mờ dần.
+# - Bảng xếp hạng Top 10 người chơi theo thời gian thực ở góc trên bên phải.
+# - Minimap góc dưới: Định vị vị trí bản thân, ranh giới map 3000x3000 và các đối thủ.
+# ------------------------------------------------------------------------------
 """Desktop scenes: authentication, lobby, room, arena and result overlays."""
 from pathlib import Path
 import json
