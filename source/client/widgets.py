@@ -1,3 +1,9 @@
+# ==============================================================================
+# Module: Neon Slither - UI Widgets & Form Controls
+# Phụ trách: Trần Minh Hải (Thành viên 2 - Nhiệm vụ T2.2)
+# Chức năng: Bộ điều khiển giao diện (Nút bấm Neon, Ô nhập văn bản, Danh sách cuộn,
+#            Hộp thoại thông báo, Kiểm tra hợp lệ dữ liệu và hỗ trợ phím Tab/Enter)
+# ==============================================================================
 """Small immediate-mode UI kit with cached type, clipped text and UTF-8 inputs."""
 from functools import lru_cache
 from pathlib import Path
