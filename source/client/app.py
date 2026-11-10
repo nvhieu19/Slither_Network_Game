@@ -18,6 +18,15 @@
 # - Bảng xếp hạng Top 10 người chơi theo thời gian thực ở góc trên bên phải.
 # - Minimap góc dưới: Định vị vị trí bản thân, ranh giới map 3000x3000 và các đối thủ.
 # ------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+# [Nhiệm vụ T2.6 - Phụ trách: Trần Minh Hải]
+# - Màn hình kết thúc trận (Death / Game Over Screen): Hiển thị lý do chết
+#   (va tường, va thân đối thủ, va đầu), điểm đỉnh, điểm cuối và thời gian sống.
+# - Luồng Hồi sinh nhanh: Phím [R] để hồi sinh tiếp tục trong phòng, [Esc] về sảnh.
+# - Màn hình Lịch sử đấu (Match History): Xem 20 lượt chơi gần nhất từ CSDL.
+# - Hướng dẫn & Điều khiển: Bật/tắt hộp thoại hướng dẫn luật chơi [F1],
+#   chế độ toàn màn hình [F11] và điều hướng form bằng phím [Tab].
+# ------------------------------------------------------------------------------
 """Desktop scenes: authentication, lobby, room, arena and result overlays."""
 from pathlib import Path
 import json
