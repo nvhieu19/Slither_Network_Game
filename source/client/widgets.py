@@ -1,8 +1,12 @@
 # ==============================================================================
-# Module: Neon Slither - UI Widgets & Form Controls
-# Phụ trách: Trần Minh Hải (Thành viên 2 - Nhiệm vụ T2.2)
-# Chức năng: Bộ điều khiển giao diện (Nút bấm Neon, Ô nhập văn bản, Danh sách cuộn,
-#            Hộp thoại thông báo, Kiểm tra hợp lệ dữ liệu và hỗ trợ phím Tab/Enter)
+# Neon Slither - Bộ Widget & Form Controls
+# Phụ trách: Trần Minh Hải (Thành viên 2 - Nhiệm vụ T2.2, T2.3)
+# 
+# Chi tiết công việc:
+# - T2.2: Thiết kế nút bấm Neon, ô nhập liệu hỗ trợ gõ có dấu, kiểm tra độ dài
+#         và định dạng hợp lệ của tài khoản/mật khẩu, điều hướng bằng phím Tab.
+# - T2.3: Thành phần danh sách cuộn (ScrollableList) hỗ trợ hiển thị danh sách
+#         phòng chơi, thanh cuộn mượt và chọn phòng nhanh.
 # ==============================================================================
 """Small immediate-mode UI kit with cached type, clipped text and UTF-8 inputs."""
 from functools import lru_cache
