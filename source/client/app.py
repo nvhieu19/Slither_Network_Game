@@ -1,3 +1,8 @@
+# ==============================================================================
+# Neon Slither - Client UI & Trải nghiệm người dùng
+# Phụ trách: Trần Minh Hải (Thành viên 2)
+# Chức năng: Điều phối màn hình (Auth, Lobby, Room, Game, HUD, Chat, Leaderboard)
+# ==============================================================================
 """Desktop scenes: authentication, lobby, room, arena and result overlays."""
 from pathlib import Path
 import json
