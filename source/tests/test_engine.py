@@ -91,6 +91,11 @@ class EngineTests(unittest.TestCase):
         for _ in range(MAX_FOOD+10): self.a.add_food()
         self.assertEqual(len(self.a.food),MAX_FOOD)
 
+    def test_food_target_is_capped(self):
+        arena = Arena(42, food_count=MAX_FOOD+1)
+        self.assertEqual(arena.food_count, MAX_FOOD)
+        self.assertEqual(len(arena.food), MAX_FOOD)
+
     def test_turn_wrap_and_limit(self):
         result=turn_toward(math.pi-.02,-math.pi+.02,.1)
         self.assertAlmostEqual(result,math.pi+.02)

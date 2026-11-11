@@ -69,7 +69,7 @@ class Arena:
         self.snakes = {}
         self.food = {}
         self.food_serial = 0
-        self.food_count = food_count
+        self.food_count = min(max(food_count, 0), MAX_FOOD)
         self.tick = 0
         self.events = []
         self.refill()

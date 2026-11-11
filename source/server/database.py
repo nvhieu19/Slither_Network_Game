@@ -84,27 +84,31 @@ class Database:
         return query.replace("?", "%s") if self.pool else query
 
     def _init_sqlite(self):
-        with sqlite3.connect(self.path) as conn:
-            conn.execute("PRAGMA journal_mode=WAL")
-            conn.executescript("""
-            CREATE TABLE IF NOT EXISTS users (
-              id INTEGER PRIMARY KEY AUTOINCREMENT, username TEXT NOT NULL UNIQUE,
-              display_name TEXT NOT NULL, password_hash TEXT NOT NULL,
-              skin_color TEXT NOT NULL DEFAULT '#54E8B0', highest_score INTEGER NOT NULL DEFAULT 0,
-              created_at TEXT DEFAULT CURRENT_TIMESTAMP);
-            CREATE TABLE IF NOT EXISTS rooms (
-              id TEXT PRIMARY KEY, name TEXT NOT NULL, owner_id INTEGER NOT NULL REFERENCES users(id),
-              capacity INTEGER NOT NULL, status TEXT NOT NULL DEFAULT 'WAITING',
-              created_at TEXT DEFAULT CURRENT_TIMESTAMP, closed_at TEXT);
-            CREATE TABLE IF NOT EXISTS match_history (
-              id INTEGER PRIMARY KEY AUTOINCREMENT, run_id TEXT NOT NULL UNIQUE,
-              user_id INTEGER NOT NULL REFERENCES users(id), room_id TEXT NOT NULL REFERENCES rooms(id),
-              score INTEGER NOT NULL, final_score INTEGER NOT NULL, max_length INTEGER NOT NULL,
-              duration_seconds REAL NOT NULL, death_reason TEXT NOT NULL,
-              played_at TEXT DEFAULT CURRENT_TIMESTAMP);
-            CREATE INDEX IF NOT EXISTS idx_score ON users(highest_score);
-            CREATE INDEX IF NOT EXISTS idx_history_user ON match_history(user_id, played_at);
-            """)
+        conn = sqlite3.connect(self.path)
+        try:
+            with conn:
+                conn.execute("PRAGMA journal_mode=WAL")
+                conn.executescript("""
+                CREATE TABLE IF NOT EXISTS users (
+                  id INTEGER PRIMARY KEY AUTOINCREMENT, username TEXT NOT NULL UNIQUE,
+                  display_name TEXT NOT NULL, password_hash TEXT NOT NULL,
+                  skin_color TEXT NOT NULL DEFAULT '#54E8B0', highest_score INTEGER NOT NULL DEFAULT 0,
+                  created_at TEXT DEFAULT CURRENT_TIMESTAMP);
+                CREATE TABLE IF NOT EXISTS rooms (
+                  id TEXT PRIMARY KEY, name TEXT NOT NULL, owner_id INTEGER NOT NULL REFERENCES users(id),
+                  capacity INTEGER NOT NULL, status TEXT NOT NULL DEFAULT 'WAITING',
+                  created_at TEXT DEFAULT CURRENT_TIMESTAMP, closed_at TEXT);
+                CREATE TABLE IF NOT EXISTS match_history (
+                  id INTEGER PRIMARY KEY AUTOINCREMENT, run_id TEXT NOT NULL UNIQUE,
+                  user_id INTEGER NOT NULL REFERENCES users(id), room_id TEXT NOT NULL REFERENCES rooms(id),
+                  score INTEGER NOT NULL, final_score INTEGER NOT NULL, max_length INTEGER NOT NULL,
+                  duration_seconds REAL NOT NULL, death_reason TEXT NOT NULL,
+                  played_at TEXT DEFAULT CURRENT_TIMESTAMP);
+                CREATE INDEX IF NOT EXISTS idx_score ON users(highest_score);
+                CREATE INDEX IF NOT EXISTS idx_history_user ON match_history(user_id, played_at);
+                """)
+        finally:
+            conn.close()
 
     @staticmethod
     def public(row):

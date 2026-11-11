@@ -66,7 +66,7 @@ def main():
             app.create_room(); frames_until(lambda:app.scene=="room")
             friend=Wire(server.port)
             friend.send("REGISTER",username="comet_pilot",password="demo_password123",name="Comet Pilot")
-            auth=friend.until("AUTH_OK")
+            friend.until("AUTH_OK")
             friend.send("JOIN_ROOM",room_id=app.room["id"]); friend.until("ROOM_STATE")
             friend.send("CHAT",text="Sẵn sàng! Cùng vào đấu trường nhé.")
             frames_until(lambda:len(app.room["members"])==2 and len(app.chat)>0)

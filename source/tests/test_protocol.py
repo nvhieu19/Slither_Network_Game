@@ -21,7 +21,7 @@ class ProtocolTests(unittest.TestCase):
         with self.assertRaises(ProtocolError): FrameDecoder(20).feed(b'a'*21+b'\n')
 
     def test_numbers(self):
-        for n in [True,"1",float("inf"),float("nan"),-11]:
+        for n in [True,"1",float("inf"),float("nan"),-11,10**1000]:
             with self.assertRaises(ProtocolError): finite_number(n,-10,10)
         self.assertEqual(finite_number(2,-10,10),2)
 
