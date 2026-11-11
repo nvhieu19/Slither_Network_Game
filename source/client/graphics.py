@@ -6,7 +6,7 @@ import random
 import time
 import pygame
 from common.config import RADIUS, WORLD_SIZE
-from client.widgets import text, panel, BG, TEXT, MUTED, ACCENT, EDGE
+from client.widgets import text, panel, TEXT, MUTED, ACCENT
 
 
 def rgb(value):
@@ -153,7 +153,7 @@ class WorldRenderer:
                      pygame.Rect(0,max(0,arena_rect.bottom),1280,max(0,800-arena_rect.bottom))]:
             pygame.draw.rect(surface,(39,16,34),rect)
         pygame.draw.rect(surface,(186,61,107),arena_rect,4)
-        for fid,x,y,value,color in world["food"]:
+        for _,x,y,value,color in world["food"]:
             px,py = screen((x,y))
             if -25<px<1305 and -25<py<825:
                 c = rgb(color)

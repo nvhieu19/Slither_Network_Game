@@ -28,8 +28,6 @@
 #   chế độ toàn màn hình [F11] và điều hướng form bằng phím [Tab].
 # ------------------------------------------------------------------------------
 """Desktop scenes: authentication, lobby, room, arena and result overlays."""
-from pathlib import Path
-import json
 import math
 import time
 import pygame
@@ -37,7 +35,7 @@ from common.config import SKINS, INPUT_RATE, BASE_SEGMENTS
 from client.network import Network
 from client.graphics import Backdrop, WorldRenderer, snake_art, halo, rgb
 from client.widgets import (Buttons, Input, text, panel, pill, font,
-                            BG, PANEL, EDGE, TEXT, MUTED, ACCENT, RED, ROOT)
+                            BG, EDGE, TEXT, MUTED, ACCENT, RED)
 
 
 class App:
@@ -394,7 +392,7 @@ class App:
         text(self.canvas,"Cuộn chuột trên sảnh để xem thêm phòng.",(43,765),11,MUTED)
 
     def draw_chat_lines(self,rect,lines=9):
-        x,y,w,h=rect
+        x,y,w,_=rect
         wrapped=[]
         for entry in self.chat:
             prefix=entry["name"]+": "
@@ -409,7 +407,7 @@ class App:
         for i,line in enumerate(wrapped[-lines:]):
             text(self.canvas,line,(x,y+i*25),13,TEXT,max_width=w)
 
-    def draw_room(self,now):
+    def draw_room(self):
         self.header("PHÒNG CHỜ  /  TRÒ CHUYỆN VÀ CHUẨN BỊ")
         text(self.canvas,self.room["name"],(42,129),29,TEXT,True,max_width=860)
         text(self.canvas,f"Mã phòng {self.room['id']} · {self.room['players']}/{self.room['capacity']} người · {self.room['bots']} bot",(43,174),14,MUTED)
@@ -546,7 +544,7 @@ class App:
                 text(self.canvas,row["played_at"][:19],(790,y),12,MUTED)
             text(self.canvas,"Điểm được ghi khi chết, rời trận hoặc mất kết nối; dữ liệu có thể trễ một nhịp lưu.",(240,651),11,MUTED)
 
-    def update(self,now,dt):
+    def update(self,now):
         if self.net:
             for message in self.net.poll(): self.handle_message(message)
         if self.scene=="lobby" and now-self.last_refresh>3:
@@ -571,7 +569,7 @@ class App:
         if self.scene!="game": self.backdrop.draw(self.canvas,now)
         if self.scene=="auth": self.draw_auth(now)
         elif self.scene=="lobby" and self.user: self.draw_lobby(now)
-        elif self.scene=="room" and self.room: self.draw_room(now)
+        elif self.scene=="room" and self.room: self.draw_room()
         elif self.scene=="game" and self.room: self.draw_game(now,dt)
         if self.modal: self.draw_modal()
         if not self.connected and self.scene!="auth":
@@ -593,7 +591,7 @@ class App:
         pos=pygame.mouse.get_pos()
         self.mouse=((pos[0]-dx)/scale,(pos[1]-dy)/scale)
         for e in pygame.event.get(): self.event(e)
-        self.update(now,dt)
+        self.update(now)
         self.draw(now,dt)
         self.window.fill(BG)
         if ww==1280 and wh==800:

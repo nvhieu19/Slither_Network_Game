@@ -12,7 +12,7 @@ class DatabaseTests(unittest.TestCase):
     def tearDown(self): self.tmp.cleanup()
 
     def test_password_salted_and_valid_login(self):
-        other=self.db.register("player_two","password123","Hai")
+        self.db.register("player_two","password123","Hai")
         with self.db.cursor() as cur:
             cur.execute("SELECT password_hash FROM users ORDER BY id")
             hashes=[r["password_hash"] for r in cur.fetchall()]

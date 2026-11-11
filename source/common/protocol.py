@@ -17,7 +17,7 @@ def encode_packet(packet):
         raise ProtocolError("Invalid JSON value") from exc
 
 
-def _reject_constant(value):
+def _reject_constant(_):
     raise ProtocolError("Non-finite JSON number")
 
 
@@ -50,6 +50,6 @@ class FrameDecoder:
 def finite_number(value, minimum, maximum):
     if isinstance(value, bool) or not isinstance(value, (float, int)):
         raise ProtocolError("Expected number")
-    if not math.isfinite(value) or not minimum <= value <= maximum:
+    if value < minimum or value > maximum or not math.isfinite(value):
         raise ProtocolError("Number out of range")
     return float(value)

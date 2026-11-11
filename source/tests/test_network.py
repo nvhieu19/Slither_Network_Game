@@ -1,6 +1,5 @@
 """End-to-end tests over real localhost TCP sockets; no mocks for transport."""
 from pathlib import Path
-import math
 import socket
 import tempfile
 import threading
@@ -56,7 +55,7 @@ class NetworkTests(unittest.TestCase):
         return a,b,room
 
     def test_room_chat_host_start_and_shared_state(self):
-        a,b,room=self.room_pair()
+        a,b,_=self.room_pair()
         b.send("CHAT",text="Xin chào, phòng thử nghiệm!")
         self.assertEqual(a.until("CHAT")["text"],b.until("CHAT")["text"])
         b.send("START_GAME")
@@ -78,7 +77,7 @@ class NetworkTests(unittest.TestCase):
         self.assertEqual(a.until("ERROR")["type"],"ERROR")
 
     def test_death_respawn_history_and_cleanup(self):
-        a,b,room=self.room_pair(); a.send("START_GAME"); a.until("WORLD_STATE")
+        a,_,room=self.room_pair(); a.send("START_GAME"); a.until("WORLD_STATE")
         pid=str(a.auth["user"]["id"])
         with self.server.lock:
             snake=self.server.rooms[room["id"]].arena.snakes[pid]
