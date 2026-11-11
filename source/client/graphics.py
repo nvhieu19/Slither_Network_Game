@@ -143,3 +143,31 @@ class WorldRenderer:
         for x in range(int((cx-640)//60)*60,int(cx+700),60):
             xx = round(x-cx+640)
             pygame.draw.line(surface,(18,33,46),(xx,0),(xx,800))
+        for y in range(int((cy-400)//60)*60,int(cy+460),60):
+            yy = round(y-cy+400)
+            pygame.draw.line(surface,(18,33,46),(0,yy),(1280,yy))
+        # World border and shaded outside area.
+        arena_rect = pygame.Rect(round(640-cx),round(400-cy),WORLD_SIZE,WORLD_SIZE)
+        for rect in [pygame.Rect(0,0,max(0,arena_rect.left),800),pygame.Rect(0,0,1280,max(0,arena_rect.top)),
+                     pygame.Rect(max(0,arena_rect.right),0,max(0,1280-arena_rect.right),800),
+                     pygame.Rect(0,max(0,arena_rect.bottom),1280,max(0,800-arena_rect.bottom))]:
+            pygame.draw.rect(surface,(39,16,34),rect)
+        pygame.draw.rect(surface,(186,61,107),arena_rect,4)
+        for _,x,y,value,color in world["food"]:
+            px,py = screen((x,y))
+            if -25<px<1305 and -25<py<825:
+                c = rgb(color)
+                r = 3 if value==1 else 5
+                halo(surface,(px,py),c,15 if value==1 else 23)
+                pygame.draw.circle(surface,c,(round(px),round(py)),r)
+                pygame.draw.circle(surface,(233,255,252),(round(px-1),round(py-1)),1)
+        for s in sorted(world["snakes"],key=lambda s:s["id"]==pid):
+            if not s["alive"]:
+                continue
+            points = [screen(p) for p in s["body"]]
+            snake_art(surface,points,s["color"],s["angle"],boosting=s["boost"],shield=s["shield"]>0)
+            x,y = points[0]
+            if -60<x<1340 and -60<y<860:
+                text(surface,s["name"]+(" · BOT" if s["bot"] else ""),(x,y-31),12,ACCENT if s["id"]==pid else TEXT,True,"midbottom")
+            if s["id"]==pid:
+                self.me_screen = points[0]
