@@ -171,3 +171,13 @@ class WorldRenderer:
                 text(surface,s["name"]+(" · BOT" if s["bot"] else ""),(x,y-31),12,ACCENT if s["id"]==pid else TEXT,True,"midbottom")
             if s["id"]==pid:
                 self.me_screen = points[0]
+        keep=[]
+        for p in self.particles:
+            p[0]+=p[2]*dt; p[1]+=p[3]*dt; p[4]-=dt
+            if p[4]>0:
+                keep.append(p)
+                pt=screen(p)
+                pygame.draw.circle(surface,p[5],(round(pt[0]),round(pt[1])),max(1,int(p[4]*4)))
+        self.particles=keep
+        return world
+
