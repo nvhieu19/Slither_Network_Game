@@ -112,3 +112,17 @@ class WorldRenderer:
                 after = item
                 break
         a,b = before[1],after[1]
+        alpha = max(0,min(1,(target-before[0])/max(.001,after[0]-before[0])))
+        old = {s["id"]:s for s in a["snakes"]}
+        snakes = []
+        for s in b["snakes"]:
+            p = old.get(s["id"])
+            if p and p["alive"] and s["alive"] and abs(p["body"][0][0]-s["body"][0][0]) < 150 and abs(p["body"][0][1]-s["body"][0][1]) < 150:
+                body = [(p["body"][min(i,len(p["body"])-1)][0]*(1-alpha)+xy[0]*alpha,
+                         p["body"][min(i,len(p["body"])-1)][1]*(1-alpha)+xy[1]*alpha) for i,xy in enumerate(s["body"])]
+                delta = (s["angle"]-p["angle"]+math.pi)%math.tau-math.pi
+                snakes.append({**s,"body":body,"angle":p["angle"]+delta*alpha})
+            else:
+                snakes.append(s)
+        return {**b,"snakes":snakes}
+
