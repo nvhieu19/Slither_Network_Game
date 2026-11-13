@@ -181,3 +181,17 @@ class WorldRenderer:
         self.particles=keep
         return world
 
+    def radar(self,surface,world,pid,rect):
+        panel(surface,rect,(11,23,34),16)
+        x,y,w,h=rect
+        text(surface,"BẢN ĐỒ",(x+16,y+13),11,MUTED,True)
+        inner=pygame.Rect(x+18,y+39,w-36,h-55)
+        pygame.draw.rect(surface,(29,48,61),inner,1,border_radius=4)
+        for i in (1,2):
+            pygame.draw.line(surface,(23,40,53),(inner.x+i*inner.w/3,inner.y),(inner.x+i*inner.w/3,inner.bottom))
+            pygame.draw.line(surface,(23,40,53),(inner.x,inner.y+i*inner.h/3),(inner.right,inner.y+i*inner.h/3))
+        for s in world["snakes"]:
+            if s["alive"]:
+                p=s["body"][0]
+                pt=(round(inner.x+p[0]/WORLD_SIZE*inner.w),round(inner.y+p[1]/WORLD_SIZE*inner.h))
+                pygame.draw.circle(surface,ACCENT if s["id"]==pid else (255,130,156),pt,4 if s["id"]==pid else 2)
