@@ -171,3 +171,27 @@ class WorldRenderer:
                 text(surface,s["name"]+(" · BOT" if s["bot"] else ""),(x,y-31),12,ACCENT if s["id"]==pid else TEXT,True,"midbottom")
             if s["id"]==pid:
                 self.me_screen = points[0]
+        keep=[]
+        for p in self.particles:
+            p[0]+=p[2]*dt; p[1]+=p[3]*dt; p[4]-=dt
+            if p[4]>0:
+                keep.append(p)
+                pt=screen(p)
+                pygame.draw.circle(surface,p[5],(round(pt[0]),round(pt[1])),max(1,int(p[4]*4)))
+        self.particles=keep
+        return world
+
+    def radar(self,surface,world,pid,rect):
+        panel(surface,rect,(11,23,34),16)
+        x,y,w,h=rect
+        text(surface,"BẢN ĐỒ",(x+16,y+13),11,MUTED,True)
+        inner=pygame.Rect(x+18,y+39,w-36,h-55)
+        pygame.draw.rect(surface,(29,48,61),inner,1,border_radius=4)
+        for i in (1,2):
+            pygame.draw.line(surface,(23,40,53),(inner.x+i*inner.w/3,inner.y),(inner.x+i*inner.w/3,inner.bottom))
+            pygame.draw.line(surface,(23,40,53),(inner.x,inner.y+i*inner.h/3),(inner.right,inner.y+i*inner.h/3))
+        for s in world["snakes"]:
+            if s["alive"]:
+                p=s["body"][0]
+                pt=(round(inner.x+p[0]/WORLD_SIZE*inner.w),round(inner.y+p[1]/WORLD_SIZE*inner.h))
+                pygame.draw.circle(surface,ACCENT if s["id"]==pid else (255,130,156),pt,4 if s["id"]==pid else 2)
