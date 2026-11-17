@@ -22,7 +22,6 @@ MUTED = (133, 158, 178)
 ACCENT = (84, 232, 176)
 RED = (255, 121, 157)
 
-
 @lru_cache(maxsize=32)
 def font(size, bold=False):
     name = "DejaVuSans-Bold.ttf" if bold else "DejaVuSans.ttf"
