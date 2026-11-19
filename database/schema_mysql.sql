@@ -1,3 +1,13 @@
+-- ==============================================================================
+-- Neon Slither - Thiết kế cơ sở dữ liệu MySQL
+-- Phụ trách: Phạm Quang (Thành viên 5)
+-- Chức năng: Bảng dữ liệu, khóa chính (PK), khóa ngoại (FK), chỉ mục (Index)
+-- ==============================================================================
+-- ------------------------------------------------------------------------------
+-- [Nhiệm vụ T5.1 - Phụ trách: Phạm Quang]
+-- - Thiết kế schema MySQL với PK, FK và Index cho dữ liệu người dùng, phòng,
+--   và lịch sử trận đấu.
+-- ------------------------------------------------------------------------------
 -- NEON SLITHER - MySQL 8.0+ / 8.4. Import once with MySQL Workbench or mysql CLI.
 -- This script preserves existing data. Run it before starting --database mysql.
 CREATE DATABASE IF NOT EXISTS slither_network

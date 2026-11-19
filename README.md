@@ -1,3 +1,11 @@
+<!--
+==============================================================================
+Neon Slither - Tài liệu và hướng dẫn
+Phụ trách: Phạm Quang (Thành viên 5)
+Nhiệm vụ T5.6:
+- Hoàn thiện README, hướng dẫn cài đặt, vận hành, kiểm thử và đóng gói.
+==============================================================================
+-->
 # Neon Slither — Đồ án Lập trình mạng
 
 Game rắn săn mồi nhiều người chơi, client đồ họa **Python + Pygame-CE**, server **Python TCP đa luồng** có quyền quyết định trạng thái. MySQL lưu tài khoản, phòng và lịch sử; SQLite là chế độ demo riêng để thử nhanh.

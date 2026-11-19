@@ -1,3 +1,24 @@
+# ==============================================================================
+# Neon Slither - CSDL và bảo mật
+# Phụ trách: Phạm Quang (Thành viên 5)
+# Chức năng: Connection Pool, PBKDF2, lưu kết quả trận và thống kê
+# ==============================================================================
+# ------------------------------------------------------------------------------
+# [Nhiệm vụ T5.2 - Phụ trách: Phạm Quang]
+# - Tạo repository và MySQL Connection Pool phục vụ truy vấn CSDL.
+# ------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+# [Nhiệm vụ T5.3 - Phụ trách: Phạm Quang]
+# - Tạo salt riêng và băm mật khẩu bằng PBKDF2-HMAC-SHA256.
+# ------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+# [Nhiệm vụ T5.4 - Phụ trách: Phạm Quang]
+# - Lưu kết quả trận trong transaction, chống ghi trùng bằng unique run_id.
+# ------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+# [Nhiệm vụ T5.5 - Phụ trách: Phạm Quang]
+# - Truy vấn bảng xếp hạng Top 50 và lịch sử 20 trận gần nhất.
+# ------------------------------------------------------------------------------
 """Repository: MySQL connection pool in deployment, SQLite for zero-setup demos.
 
 Only the server imports this module; clients never receive DB credentials.
@@ -23,6 +44,8 @@ def hash_password(password):
 
 
 def verify_password(password, encoded):
+    if not isinstance(password, str) or not isinstance(encoded, str):
+        return False
     try:
         scheme, count, salt, expected = encoded.split("$")
         if scheme != "pbkdf2_sha256":
@@ -66,19 +89,23 @@ class Database:
     @contextmanager
     def cursor(self):
         conn = self.pool.get_connection() if self.pool else sqlite3.connect(self.path, timeout=10)
-        if not self.pool:
-            conn.row_factory = sqlite3.Row
-            conn.execute("PRAGMA foreign_keys=ON")
-        cur = conn.cursor(dictionary=True) if self.pool else conn.cursor()
+        cur = None
         try:
+            if not self.pool:
+                conn.row_factory = sqlite3.Row
+                conn.execute("PRAGMA foreign_keys=ON")
+            cur = conn.cursor(dictionary=True) if self.pool else conn.cursor()
             yield cur
             conn.commit()
-        except Exception:
+        except BaseException:
             conn.rollback()
             raise
         finally:
-            cur.close()
-            conn.close()
+            try:
+                if cur is not None:
+                    cur.close()
+            finally:
+                conn.close()
 
     def sql(self, query):
         return query.replace("?", "%s") if self.pool else query
@@ -130,7 +157,12 @@ class Database:
                 cur.execute(self.sql("INSERT INTO users(username,display_name,password_hash) VALUES(?,?,?)"),
                             (username, name, encoded))
             except Exception as exc:
-                if "unique" in str(exc).lower() or "duplicate" in str(exc).lower():
+                is_sqlite_duplicate = (
+                    isinstance(exc, sqlite3.IntegrityError)
+                    and "unique constraint failed" in str(exc).lower()
+                )
+                is_mysql_duplicate = getattr(exc, "errno", None) == 1062
+                if is_sqlite_duplicate or is_mysql_duplicate:
                     raise ValueError("Tên tài khoản đã được sử dụng.") from exc
                 raise
         return self.login(username, password)
