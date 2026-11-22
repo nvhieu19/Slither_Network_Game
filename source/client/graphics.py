@@ -126,6 +126,10 @@ class WorldRenderer:
                 snakes.append(s)
         return {**b,"snakes":snakes}
 
+    def world_to_screen(self, point):
+        cx, cy = self.camera
+        return (point[0] - cx + 640, point[1] - cy + 400)
+
     def draw(self, surface, now, dt, pid):
         world = self.interpolated(now)
         surface.fill((8,17,27))
@@ -136,10 +140,11 @@ class WorldRenderer:
         target = me["body"][0] if me else (1500,1500)
         if self.camera is None or (me and me["shield"]>1.8):
             self.camera = list(target)
-        factor = 1-math.exp(-7*dt)
+        safe_dt = min(max(dt, 0.0), 0.1)
+        factor = 1-math.exp(-7*safe_dt)
         self.camera = [a+(b-a)*factor for a,b in zip(self.camera,target)]
         cx,cy = self.camera
-        def screen(p): return (p[0]-cx+640,p[1]-cy+400)
+        screen = self.world_to_screen
         for x in range(int((cx-640)//60)*60,int(cx+700),60):
             xx = round(x-cx+640)
             pygame.draw.line(surface,(18,33,46),(xx,0),(xx,800))
