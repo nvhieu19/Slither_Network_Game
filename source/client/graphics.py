@@ -26,6 +26,11 @@ def halo(surface, point, color, radius):
     surface.blit(glow(color,radius), (int(point[0]-radius-1),int(point[1]-radius-1)))
 
 
+def _lerp_angle(start, end, alpha):
+    delta = (end - start + math.pi) % math.tau - math.pi
+    return start + delta * alpha
+
+
 def snake_art(surface, points, color, angle, radius=RADIUS, boosting=False, shield=False):
     if not points:
         return
@@ -117,11 +122,10 @@ class WorldRenderer:
         snakes = []
         for s in b["snakes"]:
             p = old.get(s["id"])
-            if p and p["alive"] and s["alive"] and abs(p["body"][0][0]-s["body"][0][0]) < 150 and abs(p["body"][0][1]-s["body"][0][1]) < 150:
+            if p and p["alive"] and s["alive"] and p["body"] and s["body"] and abs(p["body"][0][0]-s["body"][0][0]) < 150 and abs(p["body"][0][1]-s["body"][0][1]) < 150:
                 body = [(p["body"][min(i,len(p["body"])-1)][0]*(1-alpha)+xy[0]*alpha,
                          p["body"][min(i,len(p["body"])-1)][1]*(1-alpha)+xy[1]*alpha) for i,xy in enumerate(s["body"])]
-                delta = (s["angle"]-p["angle"]+math.pi)%math.tau-math.pi
-                snakes.append({**s,"body":body,"angle":p["angle"]+delta*alpha})
+                snakes.append({**s,"body":body,"angle":_lerp_angle(p["angle"],s["angle"],alpha)})
             else:
                 snakes.append(s)
         return {**b,"snakes":snakes}
