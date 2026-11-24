@@ -60,7 +60,7 @@ def snake_art(surface, points, color, angle, radius=RADIUS, boosting=False, shie
         taper = min(1, .45+(len(points)-i)/8)
         r = max(4, round(radius*taper))
         if i%3 == 0 or i == 0:
-            halo(surface,p,c,r*3 if boosting else r*2)
+            halo(surface, p, c, int(r * 3.2) if boosting else r * 2)
         pygame.draw.circle(surface, c if (i//3)%2==0 else dark, p,r)
         pygame.draw.circle(surface, tuple(min(255,int(v*.65+85)) for v in c),
                            (p[0]-int(r*.23),p[1]-int(r*.27)),max(2,int(r*.33)))
@@ -107,6 +107,8 @@ class WorldRenderer:
                     for _ in range(2):
                         self.particles.append([p[0],p[1],self.rng.uniform(-100,100),self.rng.uniform(-100,100),.8,color])
             self.last_alive[s["id"]] = s["alive"]
+        if len(self.particles) > 250:
+            self.particles = self.particles[-250:]
         self.states.append((state.get("_received",time.monotonic()),state))
 
     def interpolated(self, now):
