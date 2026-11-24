@@ -88,6 +88,7 @@ class App:
         self.seq = 0
         self.chat_open = False
         self.mouse = (0, 0)
+        self.last_angle = 0.0
 
         # 7. Bộ ô nhập liệu Form (T2.2 - Form tiếng Việt & giới hạn ký tự)
         self.fields = {
@@ -828,25 +829,12 @@ class App:
     # [T2.1, T2.5] CẬP NHẬT TRẠNG THÁI VÀ GỬI INPUT ĐIỀU KHIỂN
     # --------------------------------------------------------------------------
     def update(self, now, dt):
-        """Nhận gói tin mạng và gửi góc lái chuột/bàn phím lên Server ở tần số 30Hz."""
-        # 1. Tiếp nhận gói tin từ Socket Thread
-        if self.net:
-            for message in self.net.poll():
-                self.handle_message(message)
-
-        # 2. Tự động làm mới danh sách phòng mỗi 3 giây khi ở Sảnh
-        if self.scene == "lobby" and now - self.last_refresh > 3:
-            self.send("LIST_ROOMS")
-            self.last_refresh = now
-
-        # 3. Tính toán và gửi input góc quay (angle 360 độ) và phím bứt tốc (boost)
-        if self.scene == "game" and not self.dead and not self.modal and now - self.last_input >= 1 / INPUT_RATE:
-            keys = pygame.key.get_pressed()
-            mx, my = self.mouse
-            x, y = self.world.me_screen
-
-            # Tính góc chuột hướng về con trỏ bằng hàm atan2
-            angle = math.atan2(my - y, mx - x)
+        # Tính góc chuột hướng về con trỏ bằng hàm atan2 (có deadzone 8px tránh rung đầu rắn)
+            dx_m, dy_m = mx - x, my - y
+            if math.hypot(dx_m, dy_m) > 8:
+                angle = math.atan2(dy_m, dx_m)
+            else:
+                angle = self.last_angle
 
             # Hỗ trợ thêm điều hướng bằng bàn phím (WASD hoặc Mũi tên)
             dx = (keys[pygame.K_d] or keys[pygame.K_RIGHT]) - (keys[pygame.K_a] or keys[pygame.K_LEFT])
@@ -854,14 +842,16 @@ class App:
             if not self.chat_open and (dx or dy):
                 angle = math.atan2(dy, dx)
 
+            self.last_angle = angle
+
             hovering = any(r.collidepoint(self.mouse) for r, _, enabled in self.buttons.items if enabled)
             boost = not self.chat_open and (keys[pygame.K_SPACE] or (pygame.mouse.get_pressed()[0] and not hovering))
 
             if self.connected:
                 self.seq += 1
-                self.send("PLAYER_INPUT", angle=angle, boost=bool(boost), seq=self.seq)
+                self.send("PLAYER_INPUT", angle=round(angle, 4), boost=bool(boost), seq=self.seq)
             self.last_input = now
-
+            
     # --------------------------------------------------------------------------
     # [T2.1] VẼ KHUNG HÌNH (RENDER PIPELINE)
     # --------------------------------------------------------------------------
