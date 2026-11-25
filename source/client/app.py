@@ -829,29 +829,44 @@ class App:
     # [T2.1, T2.5] CẬP NHẬT TRẠNG THÁI VÀ GỬI INPUT ĐIỀU KHIỂN
     # --------------------------------------------------------------------------
     def update(self, now, dt):
+        # Chỉ gửi input khi đang trong trận và đúng nhịp INPUT_RATE
+        if self.scene != "game" or self.dead or self.chat_open and not (now - self.last_input >= 1.0 / INPUT_RATE):
+            return
+        if now - self.last_input < 1.0 / INPUT_RATE:
+            return
+
+        keys = pygame.key.get_pressed()
+        mx, my = self.mouse  # toạ độ chuột trong hệ toạ độ thế giới (đã quy đổi ở frame())
+
+        # Lấy vị trí đầu con rắn của chính mình
+        own = None
+        if self.world.states:
+            own = next((s for s in self.world.states[-1][1]["snakes"] if s["id"] == self.pid), None)
+        x, y = (own["segments"][0] if own and own.get("segments") else (mx, my))
+
         # Tính góc chuột hướng về con trỏ bằng hàm atan2 (có deadzone 8px tránh rung đầu rắn)
-            dx_m, dy_m = mx - x, my - y
-            if math.hypot(dx_m, dy_m) > 8:
-                angle = math.atan2(dy_m, dx_m)
-            else:
-                angle = self.last_angle
+        dx_m, dy_m = mx - x, my - y
+        if math.hypot(dx_m, dy_m) > 8:
+            angle = math.atan2(dy_m, dx_m)
+        else:
+            angle = self.last_angle
 
-            # Hỗ trợ thêm điều hướng bằng bàn phím (WASD hoặc Mũi tên)
-            dx = (keys[pygame.K_d] or keys[pygame.K_RIGHT]) - (keys[pygame.K_a] or keys[pygame.K_LEFT])
-            dy = (keys[pygame.K_s] or keys[pygame.K_DOWN]) - (keys[pygame.K_w] or keys[pygame.K_UP])
-            if not self.chat_open and (dx or dy):
-                angle = math.atan2(dy, dx)
+        # Hỗ trợ thêm điều hướng bằng bàn phím (WASD hoặc Mũi tên)
+        dx = (keys[pygame.K_d] or keys[pygame.K_RIGHT]) - (keys[pygame.K_a] or keys[pygame.K_LEFT])
+        dy = (keys[pygame.K_s] or keys[pygame.K_DOWN]) - (keys[pygame.K_w] or keys[pygame.K_UP])
+        if not self.chat_open and (dx or dy):
+            angle = math.atan2(dy, dx)
 
-            self.last_angle = angle
+        self.last_angle = angle
 
-            hovering = any(r.collidepoint(self.mouse) for r, _, enabled in self.buttons.items if enabled)
-            boost = not self.chat_open and (keys[pygame.K_SPACE] or (pygame.mouse.get_pressed()[0] and not hovering))
+        hovering = any(r.collidepoint(self.mouse) for r, _, enabled in self.buttons.items if enabled)
+        boost = not self.chat_open and (keys[pygame.K_SPACE] or (pygame.mouse.get_pressed()[0] and not hovering))
 
-            if self.connected:
-                self.seq += 1
-                self.send("PLAYER_INPUT", angle=round(angle, 4), boost=bool(boost), seq=self.seq)
-            self.last_input = now
-            
+        if self.connected:
+            self.seq += 1
+            self.send("PLAYER_INPUT", angle=round(angle, 4), boost=bool(boost), seq=self.seq)
+        self.last_input = now
+
     # --------------------------------------------------------------------------
     # [T2.1] VẼ KHUNG HÌNH (RENDER PIPELINE)
     # --------------------------------------------------------------------------
