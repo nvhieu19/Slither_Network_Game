@@ -14,12 +14,16 @@ def rgb(value):
     return tuple(pygame.Color(value))[:3]
 
 
-@lru_cache(maxsize=200)
+@lru_cache(maxsize=256)
 def glow(color, radius):
-    surface = pygame.Surface((radius * 2 + 2, radius * 2 + 2), pygame.SRCALPHA)
-    for r in range(radius, 0, -2):
-        factor = (1 - r / radius) ** 2
-        pygame.draw.circle(surface, (*color, int(65 * factor)), (radius + 1, radius + 1), r)
+    """Vòng sáng neon nhiều lớp - mỗi layer mỏng hơn, alpha tăng dần vào giữa."""
+    size = radius * 2 + 4
+    surface = pygame.Surface((size, size), pygame.SRCALPHA)
+    cx = cy = radius + 2
+    for r in range(radius, 0, -1):
+        t = 1.0 - r / radius          # 0 ở viền ngoài → 1 ở tâm
+        alpha = int(90 * t * t * t)   # cubic fall-off → ánh sáng tập trung ở giữa
+        pygame.draw.circle(surface, (*color, alpha), (cx, cy), r)
     return surface
 
 
@@ -33,20 +37,25 @@ def _lerp_angle(start, end, alpha):
 
 
 def _draw_snake_eyes(surface, head, angle, radius):
+    """Mắt rắn neon: viền trắng + tròng đen + điểm sáng specular."""
     forward = (math.cos(angle), math.sin(angle))
     side = (-forward[1], forward[0])
+    eye_r = max(3, int(radius * 0.34))
+    pupil_r = max(2, int(radius * 0.19))
     for sign in (-1, 1):
-        p = (
-            head[0] + forward[0] * radius * 0.46 + side[0] * radius * 0.47 * sign,
-            head[1] + forward[1] * radius * 0.46 + side[1] * radius * 0.47 * sign,
-        )
-        pygame.draw.circle(surface, (244, 255, 253), (int(p[0]), int(p[1])), max(3, int(radius * 0.34)))
-        pygame.draw.circle(
-            surface,
-            (11, 25, 34),
-            (int(p[0] + forward[0] * 2), int(p[1] + forward[1] * 2)),
-            max(2, int(radius * 0.17)),
-        )
+        px = head[0] + forward[0] * radius * 0.46 + side[0] * radius * 0.47 * sign
+        py = head[1] + forward[1] * radius * 0.46 + side[1] * radius * 0.47 * sign
+        p = (int(px), int(py))
+        # Viền ngoài mắt
+        pygame.draw.circle(surface, (200, 240, 230), p, eye_r + 1)
+        # Lòng trắng
+        pygame.draw.circle(surface, (244, 255, 253), p, eye_r)
+        # Con ngươi (tròng đen)
+        pupil = (int(px + forward[0] * 2.5), int(py + forward[1] * 2.5))
+        pygame.draw.circle(surface, (8, 18, 26), pupil, pupil_r)
+        # Điểm sáng specular nhỏ trên con ngươi
+        spec = (pupil[0] - max(1, pupil_r // 2), pupil[1] - max(1, pupil_r // 2))
+        pygame.draw.circle(surface, (200, 255, 240), spec, max(1, pupil_r // 3))
 
 
 def snake_art(surface, points, color, angle, radius=RADIUS, boosting=False, shield=False, now=0.0):
