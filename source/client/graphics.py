@@ -62,37 +62,69 @@ def snake_art(surface, points, color, angle, radius=RADIUS, boosting=False, shie
     if not points:
         return
     c = rgb(color) if isinstance(color, str) else color
-    dark = tuple(int(v * 0.65) for v in c)
-    highlight = tuple(min(255, int(v * 0.65 + 85)) for v in c)
+    dark  = tuple(int(v * 0.55) for v in c)
+    mid   = tuple(int(v * 0.80) for v in c)
+    highlight = tuple(min(255, int(v * 0.55 + 110)) for v in c)
+    rim       = tuple(min(255, int(v * 0.40 + 60))  for v in c)
     w, h = surface.get_size()
+    n = len(points)
 
-    # Render the whole shadow first, so a segment never paints over its neighbour.
-    for i in range(len(points) - 1, -1, -1):
-        p = points[i]
-        if -70 < p[0] < w + 70 and -70 < p[1] < h + 70:
-            r = max(4, round(radius * min(1, 0.45 + (len(points) - i) / 8)))
-            pygame.draw.circle(surface, (2, 7, 13), (round(p[0] + 2), round(p[1] + 4)), r + 2)
+    # ── 1. Bóng đổ (shadow) toàn thân ──────────────────────────────────────
+    for i in range(n - 1, -1, -1):
+        px, py = points[i]
+        if -80 < px < w + 80 and -80 < py < h + 80:
+            taper = min(1.0, 0.42 + (n - i) / 9)
+            r = max(4, round(radius * taper))
+            pygame.draw.circle(surface, (1, 5, 10), (round(px + 2), round(py + 5)), r + 3)
 
-    for i in range(len(points) - 1, -1, -1):
-        p = (round(points[i][0]), round(points[i][1]))
-        if not (-70 < p[0] < w + 70 and -70 < p[1] < h + 70):
+    # ── 2. Đường nối mượt giữa các segment (anti-aliased line) ─────────────
+    if len(points) >= 2:
+        int_pts = [(round(p[0]), round(p[1])) for p in points]
+        # Vẽ đường nền dày (body outline) trước
+        for i in range(len(int_pts) - 1):
+            taper = min(1.0, 0.42 + (n - i) / 9)
+            lw = max(2, round(radius * taper * 1.9))
+            pygame.draw.line(surface, dark, int_pts[i], int_pts[i + 1], lw)
+        # Vẽ đường màu chính mỏng hơn ở trên
+        for i in range(len(int_pts) - 1):
+            taper = min(1.0, 0.42 + (n - i) / 9)
+            lw = max(2, round(radius * taper * 1.45))
+            seg_c = c if (i // 3) % 2 == 0 else mid
+            pygame.draw.line(surface, seg_c, int_pts[i], int_pts[i + 1], lw)
+
+    # ── 3. Vẽ từng đốt tròn (circles) chồng lên đường nối ──────────────────
+    for i in range(n - 1, -1, -1):
+        px, py = points[i]
+        if not (-80 < px < w + 80 and -80 < py < h + 80):
             continue
-        taper = min(1, 0.45 + (len(points) - i) / 8)
+        taper = min(1.0, 0.42 + (n - i) / 9)
         r = max(4, round(radius * taper))
-        if i % 3 == 0 or i == 0:
-            halo(surface, p, c, int(r * 3.2) if boosting else r * 2)
-        pygame.draw.circle(surface, c if (i // 3) % 2 == 0 else dark, p, r)
-        pygame.draw.circle(
-            surface,
-            highlight,
-            (p[0] - int(r * 0.23), p[1] - int(r * 0.27)),
-            max(2, int(r * 0.33)),
-        )
 
+        # Halo neon — dày hơn khi boost
+        if i % 2 == 0 or i == 0:
+            halo_r = int(r * 3.8) if boosting else int(r * 2.3)
+            halo(surface, (px, py), c, halo_r)
+
+        # Thân đốt: lớp rim tối → lớp màu chính → highlight
+        pygame.draw.circle(surface, rim, (round(px), round(py)), r + 1)
+        pygame.draw.circle(surface, c if (i // 3) % 2 == 0 else dark, (round(px), round(py)), r)
+
+        # Highlight phản chiếu ánh sáng (góc trên-trái)
+        hx = round(px - r * 0.26)
+        hy = round(py - r * 0.30)
+        pygame.draw.circle(surface, highlight, (hx, hy), max(2, int(r * 0.36)))
+        # Specular nhỏ hơn ở trên highlight
+        pygame.draw.circle(surface, (255, 255, 255), (hx, hy), max(1, int(r * 0.14)))
+
+    # ── 4. Đầu rắn: shield + mắt ────────────────────────────────────────────
     head = points[0]
     if shield:
-        pulse = round(2.5 * math.sin(now * 8)) if now else 0
-        pygame.draw.circle(surface, c, (int(head[0]), int(head[1])), radius + 9 + pulse, 2)
+        pulse = round(3.0 * math.sin(now * 9)) if now else 0
+        shield_r = radius + 11 + pulse
+        # Hai vòng shield lồng nhau
+        pygame.draw.circle(surface, (*c, 60), (int(head[0]), int(head[1])), shield_r + 4)
+        pygame.draw.circle(surface, c, (int(head[0]), int(head[1])), shield_r + 4, 2)
+        pygame.draw.circle(surface, c, (int(head[0]), int(head[1])), shield_r, 1)
     _draw_snake_eyes(surface, head, angle, radius)
 
 
