@@ -829,29 +829,27 @@ class App:
     # [T2.1, T2.5] CẬP NHẬT TRẠNG THÁI VÀ GỬI INPUT ĐIỀU KHIỂN
     # --------------------------------------------------------------------------
     def update(self, now, dt):
-        # Chỉ gửi input khi đang trong trận và đúng nhịp INPUT_RATE
-        if self.scene != "game" or self.dead or self.chat_open and not (now - self.last_input >= 1.0 / INPUT_RATE):
+        # Chỉ gửi input khi đang trong trận, chưa chết, và đúng nhịp INPUT_RATE
+        if self.scene != "game":
+            return
+        if self.dead:
             return
         if now - self.last_input < 1.0 / INPUT_RATE:
             return
 
         keys = pygame.key.get_pressed()
-        mx, my = self.mouse  # toạ độ chuột trong hệ toạ độ thế giới (đã quy đổi ở frame())
+        # self.mouse là toạ độ canvas (screen), self.world.me_screen cũng là canvas → cùng hệ toạ độ
+        mx, my = self.mouse
+        sx, sy = self.world.me_screen  # vị trí đầu rắn trên màn hình (canvas coord)
 
-        # Lấy vị trí đầu con rắn của chính mình
-        own = None
-        if self.world.states:
-            own = next((s for s in self.world.states[-1][1]["snakes"] if s["id"] == self.pid), None)
-        x, y = (own["segments"][0] if own and own.get("segments") else (mx, my))
-
-        # Tính góc chuột hướng về con trỏ bằng hàm atan2 (có deadzone 8px tránh rung đầu rắn)
-        dx_m, dy_m = mx - x, my - y
+        # Tính góc từ đầu rắn hướng về con trỏ chuột (deadzone 8px tránh rung đầu rắn)
+        dx_m, dy_m = mx - sx, my - sy
         if math.hypot(dx_m, dy_m) > 8:
             angle = math.atan2(dy_m, dx_m)
         else:
             angle = self.last_angle
 
-        # Hỗ trợ thêm điều hướng bằng bàn phím (WASD hoặc Mũi tên)
+        # Hỗ trợ điều hướng bằng bàn phím WASD hoặc phím mũi tên (ghi đè góc chuột)
         dx = (keys[pygame.K_d] or keys[pygame.K_RIGHT]) - (keys[pygame.K_a] or keys[pygame.K_LEFT])
         dy = (keys[pygame.K_s] or keys[pygame.K_DOWN]) - (keys[pygame.K_w] or keys[pygame.K_UP])
         if not self.chat_open and (dx or dy):
