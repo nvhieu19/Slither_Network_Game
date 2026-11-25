@@ -932,6 +932,11 @@ class App:
         for e in pygame.event.get():
             self.event(e)
 
+        # [T2.1] Lấy và xử lý toàn bộ tin nhắn từ luồng mạng (NET_CONNECTED, AUTH_OK, WORLD_STATE,...)
+        if self.net:
+            for message in self.net.poll():
+                self.handle_message(message)
+
         self.update(now, dt)
         self.draw(now, dt)
 
