@@ -1,4 +1,4 @@
-﻿"""Procedural art: neon food, smooth snakes, arena camera, radar and particles."""
+"""Procedural art: neon food, smooth snakes, arena camera, radar and particles."""
 from collections import deque
 from functools import lru_cache
 import math
