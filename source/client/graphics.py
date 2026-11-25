@@ -1,4 +1,4 @@
-"""Procedural art: neon food, smooth snakes, arena camera, radar and particles."""
+﻿"""Procedural art: neon food, smooth snakes, arena camera, radar and particles."""
 from collections import deque
 from functools import lru_cache
 import math
@@ -259,13 +259,22 @@ class WorldRenderer:
             px, py = screen((x, y))
             if -25 < px < 1305 and -25 < py < 825:
                 c = rgb(color)
-                r = 3 if value == 1 else 5
-                # Hiệu ứng nhịp thở cho mồi (T1.5)
-                pulse = round(2 * math.sin(now * 4 + (x + y) * 0.05))
-                halo_r = (15 if value == 1 else 23) + (pulse if value > 1 else pulse // 2)
+                r = 3 if value == 1 else 6
+                # Nhịp thở — mồi thường nhịp nhẹ, mồi lớn nhịp rõ hơn
+                pulse = math.sin(now * 4.5 + (x + y) * 0.05)
+                halo_r = int((16 if value == 1 else 26) + pulse * (2 if value == 1 else 4))
+                # Halo neon bên ngoài
                 halo(surface, (px, py), c, halo_r)
+                # Vòng sáng mỏng viền ngoài
+                bright = tuple(min(255, v + 60) for v in c)
+                pygame.draw.circle(surface, bright, (round(px), round(py)), r + 1)
+                # Lõi mồi màu chính
                 pygame.draw.circle(surface, c, (round(px), round(py)), r)
-                pygame.draw.circle(surface, (233, 255, 252), (round(px - 1), round(py - 1)), 1)
+                # Lớp sáng bên trong (gradient thủ công)
+                inner = tuple(min(255, int(v * 0.5 + 130)) for v in c)
+                pygame.draw.circle(surface, inner, (round(px), round(py)), max(1, r - 1))
+                # Điểm specular nhỏ
+                pygame.draw.circle(surface, (240, 255, 252), (round(px - 1), round(py - 1)), max(1, r // 3))
 
         for s in sorted(world["snakes"], key=lambda s: s["id"] == pid):
             if not s["alive"]:
