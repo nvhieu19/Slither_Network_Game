@@ -8,23 +8,31 @@ import pygame
 from common.config import RADIUS, WORLD_SIZE
 from client.widgets import text, panel, TEXT, MUTED, ACCENT
 
+# ── Premium Color Palette ──────────────────────────
+DEEP_SPACE    = (4,  8,  18)
+SPACE_BLUE    = (8,  17, 32)
+GRID_MAJOR    = (16, 30, 46)
+GRID_MINOR    = (11, 21, 33)
+BORDER_GLOW   = (100, 28, 58)
+BORDER_MAIN   = (205, 58, 108)
+BORDER_BRIGHT = (238, 128, 162)
+ARENA_OUTSIDE = (24, 8,  22)
+
 
 @lru_cache(maxsize=64)
 def rgb(value):
     return tuple(pygame.Color(value))[:3]
 
 
-@lru_cache(maxsize=256)
+@lru_cache(maxsize=512)
 def glow(color, radius):
-    """Vòng sáng neon nhiều lớp - mỗi layer mỏng hơn, alpha tăng dần vào giữa."""
-    size = radius * 2 + 4
-    surface = pygame.Surface((size, size), pygame.SRCALPHA)
-    cx = cy = radius + 2
+    s = pygame.Surface((radius*2+4, radius*2+4), pygame.SRCALPHA)
+    cx = cy = radius+2
     for r in range(radius, 0, -1):
-        t = 1.0 - r / radius          # 0 ở viền ngoài → 1 ở tâm
-        alpha = int(90 * t * t * t)   # cubic fall-off → ánh sáng tập trung ở giữa
-        pygame.draw.circle(surface, (*color, alpha), (cx, cy), r)
-    return surface
+        t = 1.0 - r/radius
+        a = int(105 * t**2.5)
+        pygame.draw.circle(s, (*color, a), (cx,cy), r)
+    return s
 
 
 def halo(surface, point, color, radius):
@@ -40,112 +48,126 @@ def _draw_snake_eyes(surface, head, angle, radius):
     """Mắt rắn neon: viền trắng + tròng đen + điểm sáng specular."""
     forward = (math.cos(angle), math.sin(angle))
     side = (-forward[1], forward[0])
-    eye_r = max(3, int(radius * 0.34))
-    pupil_r = max(2, int(radius * 0.19))
+    eye_r   = max(3, int(radius * 0.37))
+    pupil_r = max(2, int(radius * 0.21))
+    hx, hy = head
     for sign in (-1, 1):
-        px = head[0] + forward[0] * radius * 0.46 + side[0] * radius * 0.47 * sign
-        py = head[1] + forward[1] * radius * 0.46 + side[1] * radius * 0.47 * sign
-        p = (int(px), int(py))
-        # Viền ngoài mắt
-        pygame.draw.circle(surface, (200, 240, 230), p, eye_r + 1)
-        # Lòng trắng
-        pygame.draw.circle(surface, (244, 255, 253), p, eye_r)
-        # Con ngươi (tròng đen)
-        pupil = (int(px + forward[0] * 2.5), int(py + forward[1] * 2.5))
-        pygame.draw.circle(surface, (8, 18, 26), pupil, pupil_r)
-        # Điểm sáng specular nhỏ trên con ngươi
-        spec = (pupil[0] - max(1, pupil_r // 2), pupil[1] - max(1, pupil_r // 2))
-        pygame.draw.circle(surface, (200, 255, 240), spec, max(1, pupil_r // 3))
+        px = hx + forward[0]*radius*0.44 + side[0]*radius*0.48*sign
+        py = hy + forward[1]*radius*0.44 + side[1]*radius*0.48*sign
+        ep = (int(px), int(py))
+        pygame.draw.circle(surface, (180,230,215), ep, eye_r+1)   # rim
+        pygame.draw.circle(surface, (244,255,253), ep, eye_r)      # white
+        pp = (int(px+forward[0]*2.5), int(py+forward[1]*2.5))
+        pygame.draw.circle(surface, (6,15,24), pp, pupil_r)        # pupil
+        sp = (pp[0]-max(1,pupil_r//2), pp[1]-max(1,pupil_r//2))
+        pygame.draw.circle(surface, (200,255,235), sp, max(1,pupil_r//3))  # specular
 
 
 def snake_art(surface, points, color, angle, radius=RADIUS, boosting=False, shield=False, now=0.0):
     if not points:
         return
-    c = rgb(color) if isinstance(color, str) else color
-    dark  = tuple(int(v * 0.55) for v in c)
-    mid   = tuple(int(v * 0.80) for v in c)
-    highlight = tuple(min(255, int(v * 0.55 + 110)) for v in c)
-    rim       = tuple(min(255, int(v * 0.40 + 60))  for v in c)
+    c   = rgb(color) if isinstance(color, str) else color
+    dark      = tuple(int(v*0.55) for v in c)
+    mid       = tuple(int(v*0.78) for v in c)
+    highlight = tuple(min(255, int(v*0.52+112)) for v in c)
+    rim       = tuple(min(255, int(v*0.38+55))  for v in c)
     w, h = surface.get_size()
     n = len(points)
 
-    # ── 1. Bóng đổ (shadow) toàn thân ──────────────────────────────────────
-    for i in range(n - 1, -1, -1):
+    # ── 1. Shadow pass ────────────────────────────────────────
+    for i in range(n-1, -1, -1):
         px, py = points[i]
-        if -80 < px < w + 80 and -80 < py < h + 80:
-            taper = min(1.0, 0.42 + (n - i) / 9)
-            r = max(4, round(radius * taper))
-            pygame.draw.circle(surface, (1, 5, 10), (round(px + 2), round(py + 5)), r + 3)
+        if -80 < px < w+80 and -80 < py < h+80:
+            taper = min(1.0, 0.44+(n-i)/9)
+            r = max(4, round(radius*taper))
+            pygame.draw.circle(surface, (1,4,10), (round(px+2),round(py+5)), r+3)
 
-    # ── 2. Đường nối mượt giữa các segment (anti-aliased line) ─────────────
-    if len(points) >= 2:
-        int_pts = [(round(p[0]), round(p[1])) for p in points]
-        # Vẽ đường nền dày (body outline) trước
-        for i in range(len(int_pts) - 1):
-            taper = min(1.0, 0.42 + (n - i) / 9)
-            lw = max(2, round(radius * taper * 1.9))
-            pygame.draw.line(surface, dark, int_pts[i], int_pts[i + 1], lw)
-        # Vẽ đường màu chính mỏng hơn ở trên
-        for i in range(len(int_pts) - 1):
-            taper = min(1.0, 0.42 + (n - i) / 9)
-            lw = max(2, round(radius * taper * 1.45))
-            seg_c = c if (i // 3) % 2 == 0 else mid
-            pygame.draw.line(surface, seg_c, int_pts[i], int_pts[i + 1], lw)
+    # ── 2. Connector lines (smooth body) ─────────────────────
+    if n >= 2:
+        int_pts = [(round(x),round(y)) for x,y in points]
+        for i in range(n-1):
+            taper = min(1.0, 0.44+(n-i)/9)
+            r = max(4, round(radius*taper))
+            pygame.draw.line(surface, dark, int_pts[i], int_pts[i+1], max(2,round(r*1.9)))
+        for i in range(n-1):
+            taper = min(1.0, 0.44+(n-i)/9)
+            r = max(4, round(radius*taper))
+            sc = c if (i//3)%2==0 else mid
+            pygame.draw.line(surface, sc, int_pts[i], int_pts[i+1], max(2,round(r*1.42)))
 
-    # ── 3. Vẽ từng đốt tròn (circles) chồng lên đường nối ──────────────────
-    for i in range(n - 1, -1, -1):
+    # ── 3. Body circles ───────────────────────────────────────
+    for i in range(n-1, -1, -1):
         px, py = points[i]
-        if not (-80 < px < w + 80 and -80 < py < h + 80):
+        if not (-80 < px < w+80 and -80 < py < h+80):
             continue
-        taper = min(1.0, 0.42 + (n - i) / 9)
-        r = max(4, round(radius * taper))
+        taper = min(1.0, 0.44+(n-i)/9)
+        r = max(4, round(radius*taper))
+        p = (round(px), round(py))
+        # Halo
+        if i%2==0 or i==0:
+            halo(surface, p, c, int(r*3.7) if boosting else int(r*2.2))
+        # Layers
+        pygame.draw.circle(surface, rim,                                 p, r+1)
+        pygame.draw.circle(surface, c if (i//3)%2==0 else dark,        p, r)
+        hx2 = p[0]-int(r*0.26); hy2 = p[1]-int(r*0.30)
+        pygame.draw.circle(surface, highlight, (hx2,hy2), max(2,int(r*0.37)))
+        pygame.draw.circle(surface, (255,255,255), (hx2,hy2), max(1,int(r*0.14)))
 
-        # Halo neon — dày hơn khi boost
-        if i % 2 == 0 or i == 0:
-            halo_r = int(r * 3.8) if boosting else int(r * 2.3)
-            halo(surface, (px, py), c, halo_r)
+    # ── 4. Head glow ──────────────────────────────────────────
+    halo(surface, (round(points[0][0]),round(points[0][1])), c,
+         int(radius*4.2) if boosting else int(radius*2.9))
 
-        # Thân đốt: lớp rim tối → lớp màu chính → highlight
-        pygame.draw.circle(surface, rim, (round(px), round(py)), r + 1)
-        pygame.draw.circle(surface, c if (i // 3) % 2 == 0 else dark, (round(px), round(py)), r)
-
-        # Highlight phản chiếu ánh sáng (góc trên-trái)
-        hx = round(px - r * 0.26)
-        hy = round(py - r * 0.30)
-        pygame.draw.circle(surface, highlight, (hx, hy), max(2, int(r * 0.36)))
-        # Specular nhỏ hơn ở trên highlight
-        pygame.draw.circle(surface, (255, 255, 255), (hx, hy), max(1, int(r * 0.14)))
-
-    # ── 4. Đầu rắn: shield + mắt ────────────────────────────────────────────
-    head = points[0]
+    # ── 5. Shield ─────────────────────────────────────────────
+    hx, hy = int(points[0][0]), int(points[0][1])
     if shield:
-        pulse = round(3.0 * math.sin(now * 9)) if now else 0
-        shield_r = radius + 11 + pulse
-        # Hai vòng shield lồng nhau
-        pygame.draw.circle(surface, (*c, 60), (int(head[0]), int(head[1])), shield_r + 4)
-        pygame.draw.circle(surface, c, (int(head[0]), int(head[1])), shield_r + 4, 2)
-        pygame.draw.circle(surface, c, (int(head[0]), int(head[1])), shield_r, 1)
-    _draw_snake_eyes(surface, head, angle, radius)
+        pulse = 3.5*math.sin(now*10) if now else 0
+        for d, lw in ((12+pulse,2),(7+pulse*0.5,2),(2,1)):
+            pygame.draw.circle(surface, c, (hx,hy), max(1,int(radius+d)), lw)
+
+    # ── 6. Eyes ───────────────────────────────────────────────
+    _draw_snake_eyes(surface, points[0], angle, radius)
 
 
 class Backdrop:
     def __init__(self):
+        # Cache toàn bộ nền tĩnh — chỉ tính 1 lần
         self.surface = pygame.Surface((1280, 800))
+        # Gradient từng dòng
         for y in range(800):
             t = y / 800
-            pygame.draw.line(self.surface, (int(10 + 3 * t), int(18 + 7 * t), int(29 + 9 * t)), (0, y), (1280, y))
-        for x in range(0, 1280, 48):
-            pygame.draw.line(self.surface, (20, 32, 44), (x, 0), (x, 800))
-        for y in range(0, 800, 48):
-            pygame.draw.line(self.surface, (20, 32, 44), (0, y), (1280, y))
-        rng = random.Random(33)
-        self.stars = [(rng.randrange(1280), rng.randrange(800), rng.random() * math.tau) for _ in range(60)]
+            r = int(DEEP_SPACE[0] + (SPACE_BLUE[0]-DEEP_SPACE[0])*t)
+            g = int(DEEP_SPACE[1] + (SPACE_BLUE[1]-DEEP_SPACE[1])*t)
+            b = int(DEEP_SPACE[2] + (SPACE_BLUE[2]-DEEP_SPACE[2])*t + 15*t*(1-t))
+            pygame.draw.line(self.surface, (r,g,b), (0,y),(1280,y))
+        # Grid minor 20px
+        for x in range(0,1280,20):
+            c = GRID_MAJOR if x%60==0 else GRID_MINOR
+            pygame.draw.line(self.surface, c, (x,0),(x,800))
+        for y in range(0,800,20):
+            c = GRID_MAJOR if y%60==0 else GRID_MINOR
+            pygame.draw.line(self.surface, c, (0,y),(1280,y))
+        # Floating stars
+        rng = random.Random(77)
+        self.stars = [(rng.randrange(1280), rng.randrange(800),
+                       rng.random()*math.tau, rng.uniform(0.4,1.1),
+                       rng.randint(40,90)) for _ in range(55)]
+        # Vignette
+        self.vignette = pygame.Surface((1280,800), pygame.SRCALPHA)
+        depth = 90
+        for i in range(depth):
+            a = int(160*(1-i/depth)**2)
+            self.vignette.fill((0,0,0,a), pygame.Rect(0,i,1280,1))             # top
+            self.vignette.fill((0,0,0,a), pygame.Rect(0,799-i,1280,1))         # bottom
+            self.vignette.fill((0,0,0,a), pygame.Rect(i,0,1,800))              # left
+            self.vignette.fill((0,0,0,a), pygame.Rect(1279-i,0,1,800))         # right
 
     def draw(self, surface, now):
-        surface.blit(self.surface, (0, 0))
-        for x, y, phase in self.stars:
-            c = int(58 + 25 * math.sin(now * 0.7 + phase))
-            pygame.draw.circle(surface, (c // 2, c, c + 15), (x, y), 1)
+        surface.blit(self.surface, (0,0))
+        for x, y, phase, speed, bmax in self.stars:
+            a = int(bmax*(0.55 + 0.45*math.sin(now*speed+phase)))
+            c = min(255,a+40)
+            pygame.draw.circle(surface, (a//2, a, c), (x,y), 1)
+        surface.blit(self.vignette, (0,0))
 
 
 class WorldRenderer:
@@ -156,6 +178,8 @@ class WorldRenderer:
         self.last_alive = {}
         self.rng = random.Random(42)
         self.me_screen = (640, 400)
+        self.shake = [0.0, 0.0]
+        self.shake_timer = 0.0
 
     def push(self, state):
         for s in state["snakes"]:
@@ -168,6 +192,8 @@ class WorldRenderer:
                             self.rng.uniform(-100, 100), self.rng.uniform(-100, 100),
                             0.8, color,
                         ])
+                self.shake = [random.uniform(-1,1)*5, random.uniform(-1,1)*5]
+                self.shake_timer = 0.15
             self.last_alive[s["id"]] = s["alive"]
         if len(self.particles) > 250:
             self.particles = self.particles[-250:]
@@ -214,14 +240,14 @@ class WorldRenderer:
 
     def draw(self, surface, now, dt, pid):
         world = self.interpolated(now)
-        surface.fill((8, 17, 27))
+        surface.fill(SPACE_BLUE)
         if not world:
             text(surface, "Đang đồng bộ đấu trường…", (640, 400), 24, anchor="center")
             return None
 
         me = next((s for s in world["snakes"] if s["id"] == pid), None)
         if me and me["body"]:
-            # Camera nhìn trước (Look-ahead) theo hướng di chuyển và trạng thái boost (T1.3)
+            # Camera nhìn trước (Look-ahead) theo hướng di chuyển và trạng thái boost
             lead = 65 if me["boost"] else 35
             hx, hy = me["body"][0]
             target = (hx + math.cos(me["angle"]) * lead, hy + math.sin(me["angle"]) * lead)
@@ -235,16 +261,33 @@ class WorldRenderer:
         factor = 1 - math.exp(-7 * safe_dt)
         self.camera = [a + (b - a) * factor for a, b in zip(self.camera, target)]
         cx, cy = self.camera
+
+        # Camera shake
+        if self.shake_timer > 0:
+            safe_dt_shake = min(dt if dt > 0 else 0.016, 0.1)
+            self.shake_timer -= safe_dt_shake
+            cx += self.shake[0]
+            cy += self.shake[1]
+
         screen = self.world_to_screen
 
+        # Grid — major and minor lines
         for x in range(int((cx - 640) // 60) * 60, int(cx + 700), 60):
             xx = round(x - cx + 640)
-            pygame.draw.line(surface, (18, 33, 46), (xx, 0), (xx, 800))
+            pygame.draw.line(surface, (22,40,56), (xx, 0), (xx, 800))
+        for x in range(int((cx - 640) // 20) * 20, int(cx + 700), 20):
+            if x % 60 != 0:
+                xx = round(x - cx + 640)
+                pygame.draw.line(surface, (13,24,35), (xx, 0), (xx, 800))
         for y in range(int((cy - 400) // 60) * 60, int(cy + 460), 60):
             yy = round(y - cy + 400)
-            pygame.draw.line(surface, (18, 33, 46), (0, yy), (1280, yy))
+            pygame.draw.line(surface, (22,40,56), (0, yy), (1280, yy))
+        for y in range(int((cy - 400) // 20) * 20, int(cy + 460), 20):
+            if y % 60 != 0:
+                yy = round(y - cy + 400)
+                pygame.draw.line(surface, (13,24,35), (0, yy), (1280, yy))
 
-        # World border and shaded outside area.
+        # World border and shaded outside area
         arena_rect = pygame.Rect(round(640 - cx), round(400 - cy), WORLD_SIZE, WORLD_SIZE)
         for rect in [
             pygame.Rect(0, 0, max(0, arena_rect.left), 800),
@@ -252,34 +295,30 @@ class WorldRenderer:
             pygame.Rect(max(0, arena_rect.right), 0, max(0, 1280 - arena_rect.right), 800),
             pygame.Rect(0, max(0, arena_rect.bottom), 1280, max(0, 800 - arena_rect.bottom)),
         ]:
-            pygame.draw.rect(surface, (39, 16, 34), rect)
-        pygame.draw.rect(surface, (186, 61, 107), arena_rect, 4)
+            pygame.draw.rect(surface, ARENA_OUTSIDE, rect)
+        pygame.draw.rect(surface, BORDER_GLOW,   arena_rect, 10, border_radius=6)
+        pygame.draw.rect(surface, BORDER_MAIN,   arena_rect,  3, border_radius=5)
+        pygame.draw.rect(surface, BORDER_BRIGHT, arena_rect,  1, border_radius=4)
 
         for _, x, y, value, color in world["food"]:
             px, py = screen((x, y))
             if -25 < px < 1305 and -25 < py < 825:
                 c = rgb(color)
                 r = 3 if value == 1 else 6
-                # Nhịp thở — mồi thường nhịp nhẹ, mồi lớn nhịp rõ hơn
-                pulse = math.sin(now * 4.5 + (x + y) * 0.05)
-                halo_r = int((16 if value == 1 else 26) + pulse * (2 if value == 1 else 4))
-                # Halo neon bên ngoài
-                halo(surface, (px, py), c, halo_r)
-                # Vòng sáng mỏng viền ngoài
-                bright = tuple(min(255, v + 60) for v in c)
-                pygame.draw.circle(surface, bright, (round(px), round(py)), r + 1)
-                # Lõi mồi màu chính
-                pygame.draw.circle(surface, c, (round(px), round(py)), r)
-                # Lớp sáng bên trong (gradient thủ công)
-                inner = tuple(min(255, int(v * 0.5 + 130)) for v in c)
-                pygame.draw.circle(surface, inner, (round(px), round(py)), max(1, r - 1))
-                # Điểm specular nhỏ
-                pygame.draw.circle(surface, (240, 255, 252), (round(px - 1), round(py - 1)), max(1, r // 3))
+                pulse_f = math.sin(now*4.5+(x+y)*0.05)
+                halo_r  = int((18 if value==1 else 28) + pulse_f*(2 if value==1 else 4))
+                halo(surface, (px,py), c, halo_r)
+                bright = tuple(min(255,v+65) for v in c)
+                pygame.draw.circle(surface, bright, (round(px),round(py)), r+1)
+                pygame.draw.circle(surface, c, (round(px),round(py)), r)
+                inner = tuple(min(255,int(v*0.5+132)) for v in c)
+                pygame.draw.circle(surface, inner, (round(px),round(py)), max(1,r-1))
+                pygame.draw.circle(surface, (238,255,250), (round(px)-1,round(py)-1), max(1,r//3))
 
         for s in sorted(world["snakes"], key=lambda s: s["id"] == pid):
             if not s["alive"]:
                 continue
-            # Sinh hạt hiệu ứng bứt tốc thuần phía client (T1.6)
+            # Sinh hạt hiệu ứng bứt tốc thuần phía client
             if s["boost"] and len(s["body"]) > 1 and self.rng.random() < 0.45:
                 tail = s["body"][-1]
                 self.particles.append([
@@ -320,16 +359,29 @@ class WorldRenderer:
         return world
 
     def radar(self, surface, world, pid, rect):
-        panel(surface, rect, (11, 23, 34), 16)
         x, y, w, h = rect
-        text(surface, "BẢN ĐỒ", (x + 16, y + 13), 11, MUTED, True)
-        inner = pygame.Rect(x + 18, y + 39, w - 36, h - 55)
-        pygame.draw.rect(surface, (29, 48, 61), inner, 1, border_radius=4)
+        # SRCALPHA radar surface with rounded fill
+        surf = pygame.Surface((w, h), pygame.SRCALPHA)
+        pygame.draw.rect(surf, (10,20,32,210), (0,0,w,h), border_radius=16)
+        # Grid lines (2 horizontal, 2 vertical)
         for i in (1, 2):
-            pygame.draw.line(surface, (23, 40, 53), (inner.x + i * inner.w / 3, inner.y), (inner.x + i * inner.w / 3, inner.bottom))
-            pygame.draw.line(surface, (23, 40, 53), (inner.x, inner.y + i * inner.h / 3), (inner.right, inner.y + i * inner.h / 3))
+            lx = int(i * w / 3)
+            ly = int(i * h / 3)
+            pygame.draw.line(surf, (20,38,55,180), (lx,0), (lx,h))
+            pygame.draw.line(surf, (20,38,55,180), (0,ly), (w,ly))
+        # Player markers
         for s in world["snakes"]:
             if s["alive"]:
                 p = s["body"][0]
-                pt = (round(inner.x + p[0] / WORLD_SIZE * inner.w), round(inner.y + p[1] / WORLD_SIZE * inner.h))
-                pygame.draw.circle(surface, ACCENT if s["id"] == pid else (255, 130, 156), pt, 4 if s["id"] == pid else 2)
+                pt = (round(p[0] / WORLD_SIZE * w), round(p[1] / WORLD_SIZE * h))
+                if s["id"] == pid:
+                    # Player: halo + circle
+                    for ra in range(8, 0, -1):
+                        ta = int(60 * (1 - ra/8) ** 2)
+                        pygame.draw.circle(surf, (*ACCENT, ta), pt, ra)
+                    pygame.draw.circle(surf, ACCENT, pt, 5)
+                else:
+                    pygame.draw.circle(surf, (255,110,150), pt, 3)
+        surface.blit(surf, (x, y))
+        # Label
+        text(surface, "BẢN ĐỒ", (x + 16, y + 13), 11, MUTED, True)

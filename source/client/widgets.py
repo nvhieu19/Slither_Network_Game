@@ -21,6 +21,9 @@ TEXT = (233, 244, 248)
 MUTED = (133, 158, 178)
 ACCENT = (84, 232, 176)
 RED = (255, 121, 157)
+GLASS      = (12, 24, 38)
+GLASS_EDGE = (38, 68, 92)
+GOLD       = (255, 200, 80)
 
 @lru_cache(maxsize=32)
 def font(size, bold=False):
@@ -56,6 +59,44 @@ def pill(surface, label, pos, color=ACCENT):
     text(surface, label, rect.center, 12, color, True, "center")
 
 
+def glass_panel(surface, rect, alpha=200, radius=16, border=None):
+    r = pygame.Rect(rect)
+    s = pygame.Surface((r.w, r.h), pygame.SRCALPHA)
+    pygame.draw.rect(s, (*GLASS, alpha), (0,0,r.w,r.h), border_radius=radius)
+    pygame.draw.line(s, (*GLASS_EDGE, 90), (radius,1), (r.w-radius,1))
+    bc = border if border is not None else GLASS_EDGE
+    pygame.draw.rect(s, (*bc, 155), (0,0,r.w,r.h), 1, border_radius=radius)
+    surface.blit(s, r.topleft)
+    return r
+
+
+def progress_bar(surface, rect, value, max_val=1.0, color=None, label=None):
+    if color is None: color = ACCENT
+    r = pygame.Rect(rect)
+    ratio = max(0.0, min(1.0, value/max_val if max_val > 0 else 0.0))
+    pygame.draw.rect(surface, (20,35,52), r, border_radius=6)
+    fw = max(0, int((r.w-2)*ratio))
+    if fw > 0:
+        fr = pygame.Rect(r.x+1, r.y+1, fw, r.h-2)
+        pygame.draw.rect(surface, color, fr, border_radius=5)
+        # highlight cạnh trên
+        pygame.draw.line(surface, tuple(min(255,v+60) for v in color),
+                         (fr.x+2,fr.y+1),(fr.right-2,fr.y+1))
+    pygame.draw.rect(surface, (40,65,88), r, 1, border_radius=6)
+    if label:
+        text(surface, label, r.center, 11, MUTED, anchor="center")
+
+
+def badge(surface, label, pos, color=ACCENT, size=11):
+    f = font(size, True)
+    w = f.size(label)[0]+14
+    r = pygame.Rect(pos[0]-w//2, pos[1]-10, w, 20)
+    pygame.draw.rect(surface, tuple(int(c*0.15) for c in color), r, border_radius=10)
+    pygame.draw.rect(surface, tuple(int(c*0.35) for c in color), r, 1, border_radius=10)
+    text(surface, label, r.center, size, color, True, "center")
+    return r
+
+
 class Input:
     def __init__(self, label, value="", password=False, limit=32):
         self.label, self.value, self.password, self.limit = label, value, password, limit
@@ -75,6 +116,12 @@ class Input:
     def draw(self, surface, rect):
         self.rect = pygame.Rect(rect)
         text(surface, self.label, (rect[0], rect[1]-23), 13, MUTED)
+        # Focus glow
+        if self.active:
+            gr = pygame.Rect(rect[0]-3, rect[1]-3, rect[2]+6, rect[3]+6)
+            gs = pygame.Surface((gr.w, gr.h), pygame.SRCALPHA)
+            pygame.draw.rect(gs, (*ACCENT, 28), (0,0,gr.w,gr.h), border_radius=13)
+            surface.blit(gs, gr.topleft)
         panel(surface, rect, (10,20,30), 10, ACCENT if self.active else EDGE)
         value = "•"*len(self.value) if self.password else self.value
         while value and font(16).size(value)[0] > rect[2]-34:
@@ -103,6 +150,15 @@ class Buttons:
             fill = (25,34,43)
         panel(surface, rect, fill, 11, None if primary else (color if hover else EDGE))
         text(surface, label, rect.center, 15, BG if primary else (TEXT if enabled else MUTED), True, "center", rect.w-18 if rect.w>=42 else None)
+        # Hover glow
+        if hover and enabled:
+            gs = pygame.Surface((rect.w+4, rect.h+4), pygame.SRCALPHA)
+            pygame.draw.rect(gs, (255,255,255,14), (0,0,rect.w+4,rect.h+4), border_radius=13)
+            surface.blit(gs, (rect.x-2, rect.y-2))
+        # Primary highlight cạnh trên
+        if primary and enabled:
+            hl = tuple(min(255,v+55) for v in (ACCENT if not danger else RED))
+            pygame.draw.line(surface, hl, (rect.x+12,rect.y+2),(rect.right-12,rect.y+2))
         self.items.append((rect, callback, enabled))
 
     def click(self, point):

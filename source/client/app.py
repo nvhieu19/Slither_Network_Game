@@ -25,6 +25,7 @@ from client.network import Network
 from client.graphics import Backdrop, WorldRenderer, snake_art, halo, rgb
 from client.widgets import (
     Buttons, Input, text, panel, pill, font,
+    glass_panel, progress_bar, badge,
     BG, PANEL, EDGE, TEXT, MUTED, ACCENT, RED, ROOT
 )
 
@@ -421,6 +422,26 @@ class App:
     # --------------------------------------------------------------------------
     def draw_auth(self, now):
         """Vẽ giao diện Đăng nhập / Đăng ký tài khoản và hoạt họa rắn Neon."""
+        if not hasattr(self, '_auth_particles'):
+            self._auth_particles = []
+
+        # Ambient particles
+        import random as _rnd
+        if len(self._auth_particles) < 25 and _rnd.random() < 0.4:
+            self._auth_particles.append([
+                _rnd.randrange(640,1280), float(_rnd.randrange(100,700)),
+                _rnd.uniform(-15,15), _rnd.uniform(-25,-8),
+                _rnd.uniform(0.8,2.0), rgb(_rnd.choice(SKINS))
+            ])
+        keep2 = []
+        for ap in self._auth_particles:
+            ap[0] += ap[2]*0.016; ap[1] += ap[3]*0.016; ap[4] -= 0.008
+            if ap[4] > 0 and 0 < ap[1] < 800:
+                r2 = max(1,int(ap[4]*2.5))
+                pygame.draw.circle(self.canvas, ap[5], (int(ap[0]),int(ap[1])), r2)
+                keep2.append(ap)
+        self._auth_particles = keep2
+
         self.header("ĐẤU TRƯỜNG RẮN NHIỀU NGƯỜI CHƠI")
 
         # Vẽ hoạt họa uốn lượn của rắn Neon trang trí ở bên phải
@@ -452,6 +473,7 @@ class App:
             text(self.canvas, label, (x, 717), 12, MUTED)
 
         # Bảng Form đăng nhập / đăng ký
+        glass_panel(self.canvas, (70, 132, 558, 610), alpha=210, radius=24)
         panel(self.canvas, (70, 132, 558, 610), radius=24)
         text(self.canvas, "Tạo tài khoản" if self.register_mode else "Sẵn sàng vào đấu trường?", (108, 164), 25, TEXT, bold=True)
         text(self.canvas, "Đăng ký lần đầu, sau đó dùng tài khoản trên mọi máy.", (108, 204), 13, MUTED)
@@ -492,6 +514,8 @@ class App:
     def draw_lobby(self, now):
         """Vẽ sảnh chính: danh sách phòng cuộn, tạo phòng và chỉnh hồ sơ/skin cá nhân."""
         self.header("SẢNH CHÍNH  /  CHỌN MỘT ĐẤU TRƯỜNG VÀ BẮT ĐẦU")
+        # Header glass background
+        glass_panel(self.canvas, (38, 115, 1242, 88), radius=14)
         text(self.canvas, "Chào " + self.user["display_name"], (42, 127), 28, TEXT, bold=True, max_width=720)
         text(self.canvas, "Lập phòng cùng bạn bè hoặc vào nhanh một trận đang mở.", (42, 171), 15, MUTED)
 
@@ -511,6 +535,7 @@ class App:
         visible = self.rooms[min(self.scroll, max(0, len(self.rooms) - 3)):][:3]
         for i, r in enumerate(visible):
             y = 276 + i * 68
+            glass_panel(self.canvas, (62, y, 716, 58), alpha=180, radius=11)
             panel(self.canvas, (62, y, 716, 58), (21, 36, 48), 11, border=None)
             pygame.draw.circle(self.canvas, ACCENT if r["status"] == "WAITING" else (108, 206, 255), (83, y + 28), 4)
             text(self.canvas, r["name"], (99, y + 11), 16, TEXT, bold=True, max_width=285)
@@ -665,6 +690,7 @@ class App:
         world = self.world.draw(self.canvas, now, dt, self.pid)
 
         # HUD góc trái trên: Điểm số, độ dài đốt thân rắn, độ trễ ping RTT
+        glass_panel(self.canvas, (24, 23, 302, 100), alpha=210, radius=18)
         panel(self.canvas, (24, 23, 302, 100), (12, 26, 37), 18)
         text(self.canvas, "NEON SLITHER", (44, 38), 15, ACCENT, bold=True)
         me = next((s for s in world["snakes"] if s["id"] == self.pid), None) if world else None
@@ -672,8 +698,18 @@ class App:
         text(self.canvas, "ĐIỂM", (121, 80), 11, MUTED, bold=True)
         text(self.canvas, f"{len(me['body']) if me else BASE_SEGMENTS} đốt  ·  {self.rtt} ms", (181, 89), 11, MUTED)
 
+        # Length progress bar
+        own_len = 0
+        if self.world.states:
+            own_s = next((s for s in self.world.states[-1][1]["snakes"] if s["id"] == self.pid), None)
+            if own_s:
+                own_len = len(own_s.get("body", []))
+        from common.config import MAX_SEGMENTS
+        progress_bar(self.canvas, (26, 125, 154, 10), own_len, MAX_SEGMENTS, ACCENT)
+
         # Bảng xếp hạng Top 10 trong trận & Radar Minimap góc dưới (T2.5)
         if world:
+            glass_panel(self.canvas, (1016, 23, 240, 90 + min(10, len(world["top"])) * 31), alpha=210, radius=18)
             panel(self.canvas, (1016, 23, 240, 90 + min(10, len(world["top"])) * 31), (12, 26, 37), 18)
             text(self.canvas, "BẢNG XẾP HẠNG", (1036, 42), 13, MUTED, bold=True)
             text(self.canvas, self.room["name"], (1036, 66), 11, MUTED, max_width=193)
@@ -766,6 +802,10 @@ class App:
         self.dim()
         self.buttons.items = []
         self.active_fields = []
+        overlay = pygame.Surface((1280,800), pygame.SRCALPHA)
+        overlay.fill((0,0,0,160))
+        self.canvas.blit(overlay, (0,0))
+        glass_panel(self.canvas, (205, 109, 870, 583), alpha=220, radius=20)
         panel(self.canvas, (205, 109, 870, 583), (16, 28, 40), 24)
 
         title_map = {
