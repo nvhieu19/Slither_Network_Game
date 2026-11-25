@@ -16,6 +16,7 @@
 from pathlib import Path
 import json
 import math
+import random as _rnd
 import time
 import pygame
 
@@ -426,7 +427,6 @@ class App:
             self._auth_particles = []
 
         # Ambient particles
-        import random as _rnd
         if len(self._auth_particles) < 25 and _rnd.random() < 0.4:
             self._auth_particles.append([
                 _rnd.randrange(640,1280), float(_rnd.randrange(100,700)),
@@ -461,8 +461,11 @@ class App:
         snake_art(self.canvas, points, SKINS[0], angle, 20, boosting=True)
 
         pill(self.canvas, "MULTIPLAYER ARENA", (742, 160))
-        text(self.canvas, "Nhỏ bé lúc bắt đầu.", (740, 209), 25, TEXT, bold=True)
-        text(self.canvas, "Dẫn đầu khi sống sót.", (740, 249), 25, TEXT, bold=True)
+        # Tiêu đề lớn với bóng đổ neon
+        text(self.canvas, "NEON", (742, 209), 52, (0, 20, 10), bold=True)   # shadow
+        text(self.canvas, "SLITHER", (742, 265), 36, (0, 15, 8), bold=True)  # shadow
+        text(self.canvas, "NEON", (740, 207), 52, ACCENT, bold=True)         # neon
+        text(self.canvas, "SLITHER", (740, 263), 36, TEXT, bold=True)        # title
         text(self.canvas, "Ăn năng lượng. Uốn lượn. Bứt tốc.", (742, 590), 17, TEXT)
         text(self.canvas, "Mỗi khúc cua là một lựa chọn.", (742, 620), 15, MUTED)
 
@@ -472,9 +475,8 @@ class App:
             text(self.canvas, num, (x, 681), 23, ACCENT, bold=True)
             text(self.canvas, label, (x, 717), 12, MUTED)
 
-        # Bảng Form đăng nhập / đăng ký
+        # Bảng Form đăng nhập / đăng ký — glassmorphism (loại bỏ panel() cũ)
         glass_panel(self.canvas, (70, 132, 558, 610), alpha=210, radius=24)
-        panel(self.canvas, (70, 132, 558, 610), radius=24)
         text(self.canvas, "Tạo tài khoản" if self.register_mode else "Sẵn sàng vào đấu trường?", (108, 164), 25, TEXT, bold=True)
         text(self.canvas, "Đăng ký lần đầu, sau đó dùng tài khoản trên mọi máy.", (108, 204), 13, MUTED)
 
@@ -522,8 +524,8 @@ class App:
         # Nút Vào nhanh một phòng trống
         self.buttons.draw(self.canvas, "VÀO NHANH  →", (968, 130, 270, 51), lambda: self.send("QUICK_JOIN"), primary=True)
 
-        # 1. Danh sách phòng đang mở (Hỗ trợ cuộn chuột - T2.3)
-        panel(self.canvas, (42, 210, 758, 290))
+        # 1. Danh sách phòng đang mở — glassmorphism
+        glass_panel(self.canvas, (42, 210, 758, 290), alpha=175, radius=14)
         text(self.canvas, "ĐẤU TRƯỜNG ĐANG MỞ", (66, 234), 13, MUTED, bold=True)
         self.buttons.draw(self.canvas, "Làm mới", (660, 225, 117, 33), lambda: self.send("LIST_ROOMS"))
 
@@ -549,8 +551,8 @@ class App:
                 enabled=r["players"] < r["capacity"]
             )
 
-        # 2. Khung tạo phòng mới (T2.3)
-        panel(self.canvas, (42, 520, 758, 227))
+        # 2. Khung tạo phòng mới — glassmorphism
+        glass_panel(self.canvas, (42, 520, 758, 227), alpha=175, radius=14)
         text(self.canvas, "TẠO PHÒNG CỦA BẠN", (66, 541), 13, MUTED, bold=True)
         self.fields["room"].draw(self.canvas, (66, 604, 359, 45))
         self.active_fields = ["room", "profile"]
@@ -570,8 +572,8 @@ class App:
         text(self.canvas, "Bot do server điều khiển và không tính vào BXH tổng.", (66, 691), 12, MUTED)
         self.buttons.draw(self.canvas, "Tạo phòng  +", (604, 675, 171, 46), self.create_room, primary=True)
 
-        # 3. Khung Hồ sơ cá nhân & Chọn 6 Skin Neon (T2.4)
-        panel(self.canvas, (822, 210, 416, 537))
+        # 3. Khung Hồ sơ cá nhân & Chọn 6 Skin Neon — glassmorphism
+        glass_panel(self.canvas, (822, 210, 416, 537), alpha=185, radius=14)
         text(self.canvas, "HỒ SƠ CỦA BẠN", (848, 234), 13, MUTED, bold=True)
         text(self.canvas, f"{self.user['highest_score']:,}", (848, 269), 40, ACCENT, bold=True)
         text(self.canvas, "ĐIỂM KỶ LỤC", (850, 323), 11, MUTED)
@@ -643,13 +645,13 @@ class App:
         )
         self.buttons.draw(self.canvas, "Rời phòng", (1074, 135, 164, 45), lambda: self.send("LEAVE_ROOM"))
 
-        # Danh sách người chơi trong phòng
-        panel(self.canvas, (42, 218, 658, 455))
+        # Danh sách người chơi trong phòng — glassmorphism
+        glass_panel(self.canvas, (42, 218, 658, 455), alpha=180, radius=14)
         text(self.canvas, "NGƯỜI CHƠI", (69, 243), 13, MUTED, bold=True)
         for i, member in enumerate(self.room["members"]):
             x = 66 + (i % 2) * 315
             y = 284 + (i // 2) * 88
-            panel(self.canvas, (x, y, 294, 73), (21, 36, 48), 12, None)
+            glass_panel(self.canvas, (x, y, 294, 73), alpha=160, radius=12)
             snake_art(self.canvas, [(x + 33 - j * 3, y + 35) for j in range(5)], member["color"], 0, 11)
             text(self.canvas, member["name"], (x + 60, y + 18), 15, TEXT, bold=True, max_width=185)
             text(self.canvas, "CHỦ PHÒNG" if member["id"] == self.room["host"] else "SẴN SÀNG", (x + 60, y + 44), 10, ACCENT)
@@ -658,8 +660,8 @@ class App:
             if self.room["host"] == self.pid and member["id"] != self.pid:
                 self.buttons.draw(self.canvas, "×", (x + 252, y + 21, 28, 30), lambda pid=member["id"]: self.send("KICK", player_id=pid))
 
-        # Khung chat bên cạnh
-        panel(self.canvas, (722, 218, 516, 455))
+        # Khung chat bên cạnh — glassmorphism
+        glass_panel(self.canvas, (722, 218, 516, 455), alpha=180, radius=14)
         text(self.canvas, "TRÒ CHUYỆN TRONG PHÒNG", (748, 243), 13, MUTED, bold=True)
         if not self.chat:
             text(self.canvas, "Chào đồng đội trước khi bắt đầu nhé.", (748, 294), 14, MUTED)
@@ -691,7 +693,6 @@ class App:
 
         # HUD góc trái trên: Điểm số, độ dài đốt thân rắn, độ trễ ping RTT
         glass_panel(self.canvas, (24, 23, 302, 100), alpha=210, radius=18)
-        panel(self.canvas, (24, 23, 302, 100), (12, 26, 37), 18)
         text(self.canvas, "NEON SLITHER", (44, 38), 15, ACCENT, bold=True)
         me = next((s for s in world["snakes"] if s["id"] == self.pid), None) if world else None
         text(self.canvas, str(me["score"] if me else 0), (44, 66), 32, TEXT, bold=True)
@@ -710,13 +711,17 @@ class App:
         # Bảng xếp hạng Top 10 trong trận & Radar Minimap góc dưới (T2.5)
         if world:
             glass_panel(self.canvas, (1016, 23, 240, 90 + min(10, len(world["top"])) * 31), alpha=210, radius=18)
-            panel(self.canvas, (1016, 23, 240, 90 + min(10, len(world["top"])) * 31), (12, 26, 37), 18)
             text(self.canvas, "BẢNG XẾP HẠNG", (1036, 42), 13, MUTED, bold=True)
             text(self.canvas, self.room["name"], (1036, 66), 11, MUTED, max_width=193)
+            # Màu huy chương: vàng/bạc/đồng cho top 3
+            _medal = [(255, 200, 80), (192, 192, 210), (200, 130, 60)]
             for i, row in enumerate(world["top"]):
                 y = 107 + i * 31
                 color = ACCENT if row["id"] == self.pid else TEXT
-                text(self.canvas, f"{i + 1:02}", (1036, y), 12, MUTED)
+                if i < 3:
+                    badge(self.canvas, f"#{i+1}", (1036, y + 1), _medal[i], size=10)
+                else:
+                    text(self.canvas, f"{i + 1:02}", (1036, y), 12, MUTED)
                 text(self.canvas, row["name"], (1064, y), 13, color, bold=True, max_width=118)
                 text(self.canvas, str(row["score"]), (1236, y), 13, color, bold=True, anchor="topright")
 
@@ -725,8 +730,8 @@ class App:
 
         self.buttons.draw(self.canvas, "Rời trận  Esc", (26, 143, 154, 36), lambda: self.send("LEAVE_ROOM"))
 
-        # Thanh trạng thái bứt tốc (Boost Indicator) ở đáy màn hình
-        panel(self.canvas, (411, 722, 458, 53), (12, 26, 37), 18)
+        # Thanh trạng thái bứt tốc — glassmorphism
+        glass_panel(self.canvas, (411, 722, 458, 53), alpha=190, radius=18)
         if me and me["boost"]:
             text(self.canvas, "BỨT TỐC  ·  ĐANG TIÊU HAO ĐIỂM", (640, 748), 13, ACCENT, bold=True, anchor="center")
         elif me and me["score"] < 5:
@@ -736,9 +741,9 @@ class App:
 
         text(self.canvas, "CHUỘT  lái rắn     ENTER  chat     F1  hướng dẫn", (26, 780), 10, MUTED, anchor="bottomleft")
 
-        # Chat box nổi trong trận đấu
+        # Chat box nổi trong trận đấu — glassmorphism
         if self.chat_open:
-            panel(self.canvas, (24, 482, 426, 262), (12, 26, 37), 17)
+            glass_panel(self.canvas, (24, 482, 426, 262), alpha=215, radius=17)
             self.draw_chat_lines((43, 501, 384, 153), 6)
             self.fields["chat"].draw(self.canvas, (43, 690, 330, 38))
             self.buttons.draw(self.canvas, "Gửi", (380, 690, 53, 38), self.send_chat, primary=True)
@@ -766,7 +771,8 @@ class App:
         self.dim()
         self.buttons.items = []
         self.active_fields = []
-        panel(self.canvas, (364, 205, 552, 374), (16, 28, 40), 25)
+        # Glassmorphism death panel với viền đỏ neon
+        glass_panel(self.canvas, (364, 205, 552, 374), alpha=230, radius=25, border=(180, 40, 60))
         pill(self.canvas, "LƯỢT CHƠI KẾT THÚC", (523, 232), RED)
         text(self.canvas, "Một vòng chơi. Thêm kinh nghiệm.", (640, 291), 22, TEXT, bold=True, anchor="center")
 
@@ -806,7 +812,6 @@ class App:
         overlay.fill((0,0,0,160))
         self.canvas.blit(overlay, (0,0))
         glass_panel(self.canvas, (205, 109, 870, 583), alpha=220, radius=20)
-        panel(self.canvas, (205, 109, 870, 583), (16, 28, 40), 24)
 
         title_map = {
             "help": "Cách chơi",
